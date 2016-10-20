@@ -5,7 +5,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 PKG_CHECK_MODULES(CHECK, [check >= 0.9.4])
 
 AC_CONFIG_SRCDIR([main/main.c])
-AC_CONFIG_HEADERS([config.h])
+#AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_CC
 AC_PROG_INSTALL
