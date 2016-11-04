@@ -1,6 +1,6 @@
 AC_PREREQ([2.69])
 AC_INIT([testing-autotools], [0.1], [takashi.menjo+github@gmail.com])
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 PKG_CHECK_MODULES(CHECK, [check >= 0.9.4])
 
