@@ -1,0 +1,3 @@
+test_direct_io
+test_pagesize_alignment
+test_realloc
