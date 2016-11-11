@@ -52,17 +52,15 @@ END_TEST
 
 int main()
 {
-	TCase *const tcase1 = tcase_create("not_null");
-	tcase_add_checked_fixture(tcase1, setup, teardown);
-	tcase_add_test(tcase1, test_ptr_is_null_and_size_is_zero);
-	tcase_add_test(tcase1, test_ptr_is_null);
-	TCase *const tcase2 = tcase_create("null");
-	tcase_add_checked_fixture(tcase2, setup, teardown);
-	tcase_add_test(tcase2, test_size_is_zero);
-	tcase_add_test(tcase2, test_enomem);
+	TCase *const tcase = tcase_create("realloc");
+	tcase_add_checked_fixture(tcase, setup, teardown);
+	tcase_add_test(tcase, test_ptr_is_null_and_size_is_zero);
+	tcase_add_test(tcase, test_ptr_is_null);
+	tcase_add_test(tcase, test_size_is_zero);
+	tcase_add_test(tcase, test_enomem);
+
 	Suite *const suite = suite_create("realloc");
-	suite_add_tcase(suite, tcase1);
-	suite_add_tcase(suite, tcase2);
+	suite_add_tcase(suite, tcase);
 
 	SRunner *const srunner = srunner_create(suite);
 	srunner_run_all(srunner, CK_NORMAL);
