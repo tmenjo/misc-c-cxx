@@ -7,9 +7,7 @@
 
 #include <check.h>
 
-#define NBYTES_TO_WRITE 4096
-
-static int fd_= -1;
+static int fd_ = -1;
 static void *ptr_ = NULL;
 
 static void setup(void)
@@ -35,7 +33,8 @@ static void teardown(void)
 	ck_assert_int_eq(0, close(fd_));
 }
 
-static void subtest_direct_write(int err, ssize_t ret, void *(alloc)(size_t), size_t size)
+static void subtest_direct_write(int err, ssize_t ret,
+                                 void *(*alloc)(size_t), size_t size)
 {
 	ptr_ = alloc(size);
 	ck_assert_ptr_ne(NULL, ptr_);
