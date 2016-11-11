@@ -3,12 +3,20 @@
 #include <fcntl.h>	/* O_* flags */
 #include <stdlib.h>	/* mkostemp, valloc */
 #include <string.h>
-#include <unistd.h>	/* close, unlink */
+#include <unistd.h>	/* close, unlink, sysconf */
 
 #include <check.h>
 
+static long pagesize_ = -1;
 static int fd_ = -1;
 static void *ptr_ = NULL;
+
+static void setup_once(void)
+{
+	pagesize_ = sysconf(_SC_PAGESIZE);
+	ck_assert_int_lt(0, pagesize_);
+	ck_assert_int_eq(pagesize_, (ssize_t)pagesize_);
+}
 
 static void setup(void)
 {
@@ -47,19 +55,20 @@ static void subtest_direct_write(int err, ssize_t ret,
 
 START_TEST(test_direct_write_success)
 {
-	subtest_direct_write(0, 4096, valloc, 4096);
+	subtest_direct_write(0, pagesize_, valloc, pagesize_);
 }
 END_TEST
 
 START_TEST(test_direct_write_fail)
 {
-	subtest_direct_write(EINVAL, -1, malloc, 4096);
+	subtest_direct_write(EINVAL, -1, malloc, pagesize_);
 }
 END_TEST
 
 int main()
 {
 	TCase *const tcase = tcase_create("direct_write");
+	tcase_add_unchecked_fixture(tcase, setup_once, NULL);
 	tcase_add_checked_fixture(tcase, setup, teardown);
 	tcase_add_test(tcase, test_direct_write_success);
 	tcase_add_test(tcase, test_direct_write_fail);
