@@ -4,6 +4,26 @@
 
 #include <check.h>
 
+static long pagesize_ = -1;
+static void *ptr_ = NULL;
+
+void setup_once(void)
+{
+	pagesize_ = sysconf(_SC_PAGESIZE);
+	ck_assert_int_lt(0, pagesize_);
+	ck_assert_int_eq(pagesize_, (ssize_t)pagesize_);
+}
+
+void setup(void)
+{
+	ptr_ = NULL;
+}
+
+void teardown(void)
+{
+	free(ptr_);
+}
+
 START_TEST(test_getpagesize)
 {
 	ck_assert_int_eq(4096, getpagesize());
@@ -18,10 +38,9 @@ END_TEST
 
 START_TEST(test_valloc_alignment)
 {
-	void * const p = valloc(1);
-	ck_assert_ptr_ne(NULL, p);
-	ck_assert_uint_eq(0, (uintptr_t)p % sysconf(_SC_PAGESIZE));
-	free(p);
+	ptr_ = valloc(1);
+	ck_assert_ptr_ne(NULL, ptr_);
+	ck_assert_uint_eq(0, (uintptr_t)ptr_ % pagesize_);
 }
 END_TEST
 
@@ -31,6 +50,8 @@ int main()
 	tcase_add_test(tcase1, test_getpagesize);
 	tcase_add_test(tcase1, test_sysconf_SC_PAGESIZE);
 	TCase *const tcase2 = tcase_create("alignment");
+	tcase_add_unchecked_fixture(tcase2, setup_once, NULL);
+	tcase_add_checked_fixture(tcase2, setup, teardown);
 	tcase_add_test(tcase2, test_valloc_alignment);
 
 	Suite *const suite = suite_create("pagesize_alignment");
