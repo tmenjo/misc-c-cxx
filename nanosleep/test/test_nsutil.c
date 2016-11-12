@@ -47,7 +47,8 @@ static void subtest_parse_decimal_long_border(long border)
 {
 	char str[64];
 	snprintf(str, sizeof(str), "%ld", border);
-	ck_assert_int_eq(EOK, errno);
+	const int e = errno;
+	ck_assert_int_eq(EOK, e);
 
 	assert_parse_decimal_long(EOK, border, str);
 }
@@ -74,7 +75,8 @@ static void subtest_parse_decimal_long_erange(long border)
 {
 	char str[64];
 	snprintf(str, sizeof(str), "%ld", border);
-	ck_assert_int_eq(EOK, errno);
+	const int e = errno;
+	ck_assert_int_eq(EOK, e);
 
 	const size_t len = strlen(str);
 	ck_assert_uint_lt(0, len);
