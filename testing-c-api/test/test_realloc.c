@@ -3,12 +3,14 @@
 
 #include <check.h>
 
+#define EOK 0
+
 static void *ptr_ = NULL;
 
 static void setup(void)
 {
 	ptr_ = NULL;
-	errno = 0;
+	errno = EOK;
 }
 
 static void teardown(void)
@@ -26,13 +28,13 @@ static void subtest_realloc(int err, int is_not_null, size_t size)
 
 START_TEST(test_ptr_is_null_and_size_is_zero)
 {
-	subtest_realloc(0, 1, 0);
+	subtest_realloc(EOK, !NULL, 0);
 }
 END_TEST
 
 START_TEST(test_ptr_is_null)
 {
-	subtest_realloc(0, 1, 1);
+	subtest_realloc(EOK, !NULL, 1);
 }
 END_TEST
 
@@ -40,13 +42,13 @@ START_TEST(test_size_is_zero)
 {
 	ptr_ = malloc(1);
 	ck_assert_ptr_ne(NULL, ptr_);
-	subtest_realloc(0, 0, 0);
+	subtest_realloc(EOK, !!NULL, 0);
 }
 END_TEST
 
 START_TEST(test_enomem)
 {
-	subtest_realloc(ENOMEM, 0, SIZE_MAX);
+	subtest_realloc(ENOMEM, !!NULL, SIZE_MAX);
 }
 END_TEST
 
