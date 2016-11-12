@@ -9,6 +9,12 @@
 
 #define EOK 0
 
+static void assert_errno(int err)
+{
+	const int e = errno;
+	ck_assert_int_eq(err, e);
+}
+
 static void setup(void)
 {
 	errno = EOK;
@@ -18,17 +24,15 @@ static void assert_parse_decimal_long(int err, long ret, const char *str)
 {
 	errno = EOK;
 	const long r = parse_decimal_long(str);
-	const int e = errno;
+	assert_errno(err);
 	ck_assert_int_eq(ret, r);
-	ck_assert_int_eq(err, e);
 }
 
 static void assert_parse_decimal_long_einval(const char *str)
 {
 	errno = EOK;
 	parse_decimal_long(str);
-	const int e = errno;
-	ck_assert_int_eq(EINVAL, e);
+	assert_errno(EINVAL);
 }
 
 START_TEST(test_parse_decimal_long)
@@ -47,8 +51,7 @@ static void subtest_parse_decimal_long_border(long border)
 {
 	char str[64];
 	snprintf(str, sizeof(str), "%ld", border);
-	const int e = errno;
-	ck_assert_int_eq(EOK, e);
+	assert_errno(EOK);
 
 	assert_parse_decimal_long(EOK, border, str);
 }
@@ -79,8 +82,7 @@ static void subtest_parse_decimal_long_erange(long border)
 {
 	char str[64];
 	snprintf(str, sizeof(str), "%ld", border);
-	const int e = errno;
-	ck_assert_int_eq(EOK, e);
+	assert_errno(EOK);
 
 	const size_t len = strlen(str);
 	ck_assert_uint_lt(0, len);
