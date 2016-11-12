@@ -12,11 +12,6 @@ void setup(void)
 	errno = 0;
 }
 
-void teardown(void)
-{
-	/* do nothing */
-}
-
 START_TEST(test_parse_decimal_long)
 {
 	ck_assert_int_eq(0L, parse_decimal_long("0"));
@@ -144,7 +139,7 @@ END_TEST
 int main()
 {
 	TCase *const tcase1 = tcase_create("parse_decimal_long");
-	tcase_add_checked_fixture(tcase1, setup, teardown);
+	tcase_add_checked_fixture(tcase1, setup, NULL);
 	tcase_add_test(tcase1, test_parse_decimal_long);
 	tcase_add_test(tcase1, test_parse_decimal_long_border_positive);
 	tcase_add_test(tcase1, test_parse_decimal_long_border_negative);
