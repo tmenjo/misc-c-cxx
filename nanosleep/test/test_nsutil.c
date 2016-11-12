@@ -52,14 +52,10 @@ static void subtest_parse_decimal_long_border(long border)
 	assert_parse_decimal_long(EOK, border, str);
 }
 
-START_TEST(test_parse_decimal_long_border_positive)
+START_TEST(test_parse_decimal_long_border)
 {
 	subtest_parse_decimal_long_border(LONG_MAX);
-}
-END_TEST
-
-START_TEST(test_parse_decimal_long_border_negative)
-{
+	setup();
 	subtest_parse_decimal_long_border(LONG_MIN);
 }
 END_TEST
@@ -87,14 +83,10 @@ static void subtest_parse_decimal_long_erange(long border)
 	assert_parse_decimal_long(ERANGE, border, str);
 }
 
-START_TEST(test_parse_decimal_long_erange_positive)
+START_TEST(test_parse_decimal_long_erange)
 {
 	subtest_parse_decimal_long_erange(LONG_MAX);
-}
-END_TEST
-
-START_TEST(test_parse_decimal_long_erange_negative)
-{
+	setup();
 	subtest_parse_decimal_long_erange(LONG_MIN);
 }
 END_TEST
@@ -128,11 +120,9 @@ int main()
 	TCase *const tcase1 = tcase_create("parse_decimal_long");
 	tcase_add_checked_fixture(tcase1, setup, NULL);
 	tcase_add_test(tcase1, test_parse_decimal_long);
-	tcase_add_test(tcase1, test_parse_decimal_long_border_positive);
-	tcase_add_test(tcase1, test_parse_decimal_long_border_negative);
+	tcase_add_test(tcase1, test_parse_decimal_long_border);
 	tcase_add_test(tcase1, test_parse_decimal_long_einval);
-	tcase_add_test(tcase1, test_parse_decimal_long_erange_positive);
-	tcase_add_test(tcase1, test_parse_decimal_long_erange_negative);
+	tcase_add_test(tcase1, test_parse_decimal_long_erange);
 	TCase *const tcase2 = tcase_create("get_second_part");
 	tcase_add_test(tcase2, test_get_second_part);
 	TCase *const tcase3 = tcase_create("get_nanosecond_part");
