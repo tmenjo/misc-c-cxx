@@ -14,6 +14,23 @@ void setup(void)
 	errno = EOK;
 }
 
+static void assert_parse_decimal_long(int err, long ret, const char *str)
+{
+	errno = EOK;
+	const long r = parse_decimal_long(str);
+	const int e = errno;
+	ck_assert_int_eq(ret, r);
+	ck_assert_int_eq(err, e);
+}
+
+static void assert_parse_decimal_long_einval(const char *str)
+{
+	errno = EOK;
+	parse_decimal_long(str);
+	const int e = errno;
+	ck_assert_int_eq(EINVAL, e);
+}
+
 START_TEST(test_parse_decimal_long)
 {
 	ck_assert_int_eq(0L, parse_decimal_long("0"));
