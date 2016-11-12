@@ -68,6 +68,10 @@ START_TEST(test_parse_decimal_long_einval)
 	assert_parse_decimal_long_einval("-");
 	assert_parse_decimal_long_einval("a");
 	assert_parse_decimal_long_einval("42 ");
+	assert_parse_decimal_long_einval("+ 1");
+	assert_parse_decimal_long_einval("- 2");
+	assert_parse_decimal_long_einval("++3");
+	assert_parse_decimal_long_einval("--4");
 }
 END_TEST
 
