@@ -9,6 +9,9 @@
 
 #define EOK 0
 
+#define assert_succeeded(ret) ck_assert_int_eq(0, (ret))
+#define assert_not_failed(ret) ck_assert_int_ne(-1, (ret))
+
 static long pagesize_ = -1;
 static int fd_ = -1;
 static void *ptr_ = NULL;
@@ -26,12 +29,12 @@ static void setup(void)
 	strcpy(template, "/tmp/XXXXXX");
 
 	fd_ = mkostemp(template, O_SYNC);
-	ck_assert_int_ne(-1, fd_);
-	ck_assert_int_eq(0, unlink(template));
+	assert_not_failed(fd_);
+	assert_succeeded(unlink(template));
 
 	const int flags = fcntl(fd_, F_GETFL);
-	ck_assert_int_ne(-1, flags);
-	ck_assert_int_eq(0, fcntl(fd_, F_SETFL, flags | O_DIRECT));
+	assert_not_failed(flags);
+	assert_succeeded(fcntl(fd_, F_SETFL, flags | O_DIRECT));
 
 	ptr_ = NULL;
 	errno = EOK;
@@ -40,7 +43,7 @@ static void setup(void)
 static void teardown(void)
 {
 	free(ptr_);
-	ck_assert_int_eq(0, close(fd_));
+	assert_succeeded(close(fd_));
 }
 
 static void subtest_direct_write(
