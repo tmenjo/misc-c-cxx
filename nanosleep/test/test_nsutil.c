@@ -33,26 +33,13 @@ static void assert_parse_decimal_long_einval(const char *str)
 
 START_TEST(test_parse_decimal_long)
 {
-	ck_assert_int_eq(0L, parse_decimal_long("0"));
-	ck_assert_int_eq(0, errno);
-
-	ck_assert_int_eq(1L, parse_decimal_long("1"));
-	ck_assert_int_eq(0, errno);
-
-	ck_assert_int_eq(-1L, parse_decimal_long("-1"));
-	ck_assert_int_eq(0, errno);
-
-	ck_assert_int_eq(2L, parse_decimal_long("+2"));
-	ck_assert_int_eq(0, errno);
-
-	ck_assert_int_eq(3L, parse_decimal_long(" 3"));
-	ck_assert_int_eq(0, errno);
-
-	ck_assert_int_eq(4L, parse_decimal_long(" +4"));
-	ck_assert_int_eq(0, errno);
-
-	ck_assert_int_eq(-5L, parse_decimal_long(" -5"));
-	ck_assert_int_eq(0, errno);
+	assert_parse_decimal_long(EOK,  0L,   "0");
+	assert_parse_decimal_long(EOK,  1L,   "1");
+	assert_parse_decimal_long(EOK, -1L,  "-1");
+	assert_parse_decimal_long(EOK,  2L,  "+2");
+	assert_parse_decimal_long(EOK,  3L,  " 3");
+	assert_parse_decimal_long(EOK,  4L, " +4");
+	assert_parse_decimal_long(EOK, -5L, " -5");
 }
 END_TEST
 
@@ -62,8 +49,7 @@ static void subtest_parse_decimal_long_border(long border)
 	snprintf(str, sizeof(str), "%ld", border);
 	ck_assert_int_eq(EOK, errno);
 
-	ck_assert_int_eq(border, parse_decimal_long(str));
-	ck_assert_int_eq(EOK, errno);
+	assert_parse_decimal_long(EOK, border, str);
 }
 
 START_TEST(test_parse_decimal_long_border_positive)
@@ -80,28 +66,11 @@ END_TEST
 
 START_TEST(test_parse_decimal_long_einval)
 {
-	parse_decimal_long(" ");
-	ck_assert_int_eq(EINVAL, errno);
-
-	errno = 0;
-
-	parse_decimal_long("+");
-	ck_assert_int_eq(EINVAL, errno);
-
-	errno = 0;
-
-	parse_decimal_long("-");
-	ck_assert_int_eq(EINVAL, errno);
-
-	errno = 0;
-
-	parse_decimal_long("a");
-	ck_assert_int_eq(EINVAL, errno);
-
-	errno = 0;
-
-	parse_decimal_long("42 ");
-	ck_assert_int_eq(EINVAL, errno);
+	assert_parse_decimal_long_einval(" ");
+	assert_parse_decimal_long_einval("+");
+	assert_parse_decimal_long_einval("-");
+	assert_parse_decimal_long_einval("a");
+	assert_parse_decimal_long_einval("42 ");
 }
 END_TEST
 
@@ -115,8 +84,7 @@ static void subtest_parse_decimal_long_erange(long border)
 	ck_assert(len != 0);
 	++str[len - 1];
 
-	ck_assert_int_eq(border, parse_decimal_long(str));
-	ck_assert_int_eq(ERANGE, errno);
+	assert_parse_decimal_long(ERANGE, border, str);
 }
 
 START_TEST(test_parse_decimal_long_erange_positive)
