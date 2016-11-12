@@ -9,7 +9,7 @@
 
 #define EOK 0
 
-void setup(void)
+static void setup(void)
 {
 	errno = EOK;
 }
@@ -81,7 +81,7 @@ static void subtest_parse_decimal_long_erange(long border)
 	ck_assert_int_eq(EOK, errno);
 
 	const size_t len = strlen(str);
-	ck_assert(len != 0);
+	ck_assert_uint_lt(0, len);
 	++str[len - 1];
 
 	assert_parse_decimal_long(ERANGE, border, str);
