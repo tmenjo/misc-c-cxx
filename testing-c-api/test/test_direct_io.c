@@ -7,6 +7,8 @@
 
 #include <check.h>
 
+#define EOK 0
+
 static long pagesize_ = -1;
 static int fd_ = -1;
 static void *ptr_ = NULL;
@@ -32,7 +34,7 @@ static void setup(void)
 	ck_assert_int_eq(0, fcntl(fd_, F_SETFL, flags | O_DIRECT));
 
 	ptr_ = NULL;
-	errno = 0;
+	errno = EOK;
 }
 
 static void teardown(void)
@@ -41,8 +43,8 @@ static void teardown(void)
 	ck_assert_int_eq(0, close(fd_));
 }
 
-static void subtest_direct_write(int err, ssize_t ret,
-                                 void *(*alloc)(size_t), size_t size)
+static void subtest_direct_write(
+	int err, ssize_t ret, void *(*alloc)(size_t), size_t size)
 {
 	ptr_ = alloc(size);
 	ck_assert_ptr_ne(NULL, ptr_);
@@ -55,7 +57,7 @@ static void subtest_direct_write(int err, ssize_t ret,
 
 START_TEST(test_direct_write_success)
 {
-	subtest_direct_write(0, pagesize_, valloc, pagesize_);
+	subtest_direct_write(EOK, pagesize_, valloc, pagesize_);
 }
 END_TEST
 
