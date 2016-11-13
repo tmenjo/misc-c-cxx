@@ -34,7 +34,7 @@ static void assert_parse_decimal_long_border(
 	int err, void (*altstr)(char *str), long border)
 {
 	char str[64];
-	errno = 0;
+	errno = EOK;
 	snprintf(str, sizeof(str), "%ld", border);
 	assert_errno(EOK);
 
