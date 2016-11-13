@@ -67,16 +67,11 @@ START_TEST(test_parse_decimal_long)
 }
 END_TEST
 
-static void subtest_parse_decimal_long_border(long border)
-{
-	assert_parse_decimal_long_border(EOK, NULL, border);
-}
-
 START_TEST(test_parse_decimal_long_border)
 {
-	subtest_parse_decimal_long_border(LONG_MAX);
+	assert_parse_decimal_long_border(EOK, NULL, LONG_MAX);
 	setup();
-	subtest_parse_decimal_long_border(LONG_MIN);
+	assert_parse_decimal_long_border(EOK, NULL, LONG_MIN);
 }
 END_TEST
 
@@ -94,16 +89,11 @@ START_TEST(test_parse_decimal_long_einval)
 }
 END_TEST
 
-static void subtest_parse_decimal_long_erange(long border)
-{
-	assert_parse_decimal_long_border(ERANGE, add_one, border);
-}
-
 START_TEST(test_parse_decimal_long_erange)
 {
-	subtest_parse_decimal_long_erange(LONG_MAX);
+	assert_parse_decimal_long_border(ERANGE, add_one, LONG_MAX);
 	setup();
-	subtest_parse_decimal_long_erange(LONG_MIN);
+	assert_parse_decimal_long_border(ERANGE, add_one, LONG_MIN);
 }
 END_TEST
 
