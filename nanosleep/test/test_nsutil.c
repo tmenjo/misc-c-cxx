@@ -35,6 +35,26 @@ static void assert_parse_decimal_long_einval(const char *str)
 	assert_errno(EINVAL);
 }
 
+static void assert_parse_decimal_long_border(
+	int err, void (*altstr)(char *str), long border)
+{
+	char str[64];
+	snprintf(str, sizeof(str), "%ld", border);
+	assert_errno(EOK);
+
+	if(altstr)
+		altstr(str);
+
+	assert_parse_decimal_long(err, border, str);
+}
+
+static void add_one(char *str)
+{
+	const size_t len = strlen(str);
+	ck_assert_uint_lt(0, len);
+	++str[len - 1];
+}
+
 START_TEST(test_parse_decimal_long)
 {
 	assert_parse_decimal_long(EOK,  0L,   "0");
@@ -49,11 +69,7 @@ END_TEST
 
 static void subtest_parse_decimal_long_border(long border)
 {
-	char str[64];
-	snprintf(str, sizeof(str), "%ld", border);
-	assert_errno(EOK);
-
-	assert_parse_decimal_long(EOK, border, str);
+	assert_parse_decimal_long_border(EOK, NULL, border);
 }
 
 START_TEST(test_parse_decimal_long_border)
@@ -80,15 +96,7 @@ END_TEST
 
 static void subtest_parse_decimal_long_erange(long border)
 {
-	char str[64];
-	snprintf(str, sizeof(str), "%ld", border);
-	assert_errno(EOK);
-
-	const size_t len = strlen(str);
-	ck_assert_uint_lt(0, len);
-	++str[len - 1];
-
-	assert_parse_decimal_long(ERANGE, border, str);
+	assert_parse_decimal_long_border(ERANGE, add_one, border);
 }
 
 START_TEST(test_parse_decimal_long_erange)
