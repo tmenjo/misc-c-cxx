@@ -15,11 +15,6 @@ static void assert_errno(int err)
 	ck_assert_int_eq(err, e);
 }
 
-static void setup(void)
-{
-	errno = EOK;
-}
-
 static void assert_parse_decimal_long(int err, long ret, const char *str)
 {
 	errno = EOK;
@@ -39,6 +34,7 @@ static void assert_parse_decimal_long_border(
 	int err, void (*altstr)(char *str), long border)
 {
 	char str[64];
+	errno = 0;
 	snprintf(str, sizeof(str), "%ld", border);
 	assert_errno(EOK);
 
@@ -70,7 +66,6 @@ END_TEST
 START_TEST(test_parse_decimal_long_border)
 {
 	assert_parse_decimal_long_border(EOK, NULL, LONG_MAX);
-	setup();
 	assert_parse_decimal_long_border(EOK, NULL, LONG_MIN);
 }
 END_TEST
@@ -92,7 +87,6 @@ END_TEST
 START_TEST(test_parse_decimal_long_erange)
 {
 	assert_parse_decimal_long_border(ERANGE, add_one, LONG_MAX);
-	setup();
 	assert_parse_decimal_long_border(ERANGE, add_one, LONG_MIN);
 }
 END_TEST
@@ -124,7 +118,6 @@ END_TEST
 int main()
 {
 	TCase *const tcase1 = tcase_create("parse_decimal_long");
-	tcase_add_checked_fixture(tcase1, setup, NULL);
 	tcase_add_test(tcase1, test_parse_decimal_long);
 	tcase_add_test(tcase1, test_parse_decimal_long_border);
 	tcase_add_test(tcase1, test_parse_decimal_long_einval);
