@@ -63,13 +63,6 @@ START_TEST(test_parse_decimal_long)
 }
 END_TEST
 
-START_TEST(test_parse_decimal_long_border)
-{
-	assert_parse_decimal_long_border(EOK, NULL, LONG_MAX);
-	assert_parse_decimal_long_border(EOK, NULL, LONG_MIN);
-}
-END_TEST
-
 START_TEST(test_parse_decimal_long_einval)
 {
 	assert_parse_decimal_long_einval(" ");
@@ -81,6 +74,13 @@ START_TEST(test_parse_decimal_long_einval)
 	assert_parse_decimal_long_einval("- 2");
 	assert_parse_decimal_long_einval("++3");
 	assert_parse_decimal_long_einval("--4");
+}
+END_TEST
+
+START_TEST(test_parse_decimal_long_border)
+{
+	assert_parse_decimal_long_border(EOK, NULL, LONG_MAX);
+	assert_parse_decimal_long_border(EOK, NULL, LONG_MIN);
 }
 END_TEST
 
@@ -119,8 +119,8 @@ int main()
 {
 	TCase *const tcase1 = tcase_create("parse_decimal_long");
 	tcase_add_test(tcase1, test_parse_decimal_long);
-	tcase_add_test(tcase1, test_parse_decimal_long_border);
 	tcase_add_test(tcase1, test_parse_decimal_long_einval);
+	tcase_add_test(tcase1, test_parse_decimal_long_border);
 	tcase_add_test(tcase1, test_parse_decimal_long_erange);
 	TCase *const tcase2 = tcase_create("get_second_part");
 	tcase_add_test(tcase2, test_get_second_part);
