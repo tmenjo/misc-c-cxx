@@ -42,6 +42,31 @@ static void teardown(void)
 	assert_success(close(fd_));
 }
 
+/* pagesize */
+
+START_TEST(test_getpagesize)
+{
+	ck_assert_int_eq(4096, getpagesize());
+}
+END_TEST
+
+START_TEST(test_sysconf_SC_PAGESIZE)
+{
+	ck_assert_int_eq(4096L, sysconf(_SC_PAGESIZE));
+}
+END_TEST
+
+START_TEST(test_valloc_alignment)
+{
+	void *const ptr = valloc(1);
+	assert_not_nullptr(ptr);
+	ck_assert_uint_eq(0, (uintptr_t)ptr % sysconf(_SC_PAGESIZE));
+	free(ptr);
+}
+END_TEST
+
+/* direct_write */
+
 static void subtest_direct_write(
 	int err, ssize_t ret, void *(*alloc)(size_t), size_t size)
 {
@@ -65,14 +90,20 @@ END_TEST
 
 int main()
 {
-	TCase *const tcase = tcase_create("direct_write");
-	tcase_add_unchecked_fixture(tcase, setup_once, NULL);
-	tcase_add_checked_fixture(tcase, setup, teardown);
-	tcase_add_test(tcase, test_direct_write_success);
-	tcase_add_test(tcase, test_direct_write_failure);
+	TCase *const tcase1 = tcase_create("pagesize");
+	tcase_add_test(tcase1, test_getpagesize);
+	tcase_add_test(tcase1, test_sysconf_SC_PAGESIZE);
+	tcase_add_test(tcase1, test_valloc_alignment);
+
+	TCase *const tcase2 = tcase_create("direct_write");
+	tcase_add_unchecked_fixture(tcase2, setup_once, NULL);
+	tcase_add_checked_fixture(tcase2, setup, teardown);
+	tcase_add_test(tcase2, test_direct_write_success);
+	tcase_add_test(tcase2, test_direct_write_failure);
 
 	Suite *const suite = suite_create("direct_io");
-	suite_add_tcase(suite, tcase);
+	suite_add_tcase(suite, tcase1);
+	suite_add_tcase(suite, tcase2);
 
 	SRunner *const srunner = srunner_create(suite);
 	srunner_run_all(srunner, CK_NORMAL);
