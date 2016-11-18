@@ -3,8 +3,9 @@
 #include <unistd.h>	/* getpagesize, sysconf */
 
 #include <check.h>
+#include "checkutil-inl.h"
 
-static long pagesize_ = -1;
+static long pagesize_ = C_ERR;
 static void *ptr_ = NULL;
 
 void setup_once(void)
@@ -39,7 +40,7 @@ END_TEST
 START_TEST(test_valloc_alignment)
 {
 	ptr_ = valloc(1);
-	ck_assert_ptr_ne(NULL, ptr_);
+	assert_not_nullptr(ptr_);
 	ck_assert_uint_eq(0, (uintptr_t)ptr_ % pagesize_);
 }
 END_TEST

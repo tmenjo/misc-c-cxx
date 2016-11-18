@@ -2,8 +2,7 @@
 #include <stdlib.h>
 
 #include <check.h>
-
-#define EOK 0
+#include "checkutil-inl.h"
 
 static void *ptr_ = NULL;
 
@@ -41,7 +40,7 @@ END_TEST
 START_TEST(test_size_is_zero)
 {
 	ptr_ = malloc(1);
-	ck_assert_ptr_ne(NULL, ptr_);
+	assert_not_nullptr(ptr_);
 	subtest_realloc(EOK, !!NULL, 0);
 }
 END_TEST

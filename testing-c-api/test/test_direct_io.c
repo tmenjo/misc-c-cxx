@@ -6,14 +6,10 @@
 #include <unistd.h>	/* close, unlink, sysconf */
 
 #include <check.h>
+#include "checkutil-inl.h"
 
-#define EOK 0
-
-#define assert_succeeded(ret) ck_assert_int_eq(0, (ret))
-#define assert_not_failed(ret) ck_assert_int_ne(-1, (ret))
-
-static long pagesize_ = -1;
-static int fd_ = -1;
+static long pagesize_ = C_ERR;
+static int fd_ = C_ERR;
 static void *ptr_ = NULL;
 
 static void setup_once(void)
@@ -29,12 +25,12 @@ static void setup(void)
 	strcpy(template, "/tmp/XXXXXX");
 
 	fd_ = mkostemp(template, O_SYNC);
-	assert_not_failed(fd_);
-	assert_succeeded(unlink(template));
+	assert_not_failure(fd_);
+	assert_success(unlink(template));
 
 	const int flags = fcntl(fd_, F_GETFL);
-	assert_not_failed(flags);
-	assert_succeeded(fcntl(fd_, F_SETFL, flags | O_DIRECT));
+	assert_not_failure(flags);
+	assert_success(fcntl(fd_, F_SETFL, flags | O_DIRECT));
 
 	ptr_ = NULL;
 	errno = EOK;
@@ -43,19 +39,16 @@ static void setup(void)
 static void teardown(void)
 {
 	free(ptr_);
-	assert_succeeded(close(fd_));
+	assert_success(close(fd_));
 }
 
 static void subtest_direct_write(
 	int err, ssize_t ret, void *(*alloc)(size_t), size_t size)
 {
 	ptr_ = alloc(size);
-	ck_assert_ptr_ne(NULL, ptr_);
+	assert_not_nullptr(ptr_);
 
-	const ssize_t r = write(fd_, ptr_, size);
-	const int e = errno;
-	ck_assert_int_eq(ret, r);
-	ck_assert_int_eq(err, e);
+	assert_error(err, ret, write(fd_, ptr_, size));
 }
 
 START_TEST(test_direct_write_success)
@@ -64,9 +57,9 @@ START_TEST(test_direct_write_success)
 }
 END_TEST
 
-START_TEST(test_direct_write_fail)
+START_TEST(test_direct_write_failure)
 {
-	subtest_direct_write(EINVAL, -1, malloc, pagesize_);
+	subtest_direct_write(EINVAL, C_ERR, malloc, pagesize_);
 }
 END_TEST
 
@@ -76,7 +69,7 @@ int main()
 	tcase_add_unchecked_fixture(tcase, setup_once, NULL);
 	tcase_add_checked_fixture(tcase, setup, teardown);
 	tcase_add_test(tcase, test_direct_write_success);
-	tcase_add_test(tcase, test_direct_write_fail);
+	tcase_add_test(tcase, test_direct_write_failure);
 
 	Suite *const suite = suite_create("direct_io");
 	suite_add_tcase(suite, tcase);
