@@ -15,8 +15,6 @@ static void *ptr_ = NULL;
 static void setup_once(void)
 {
 	pagesize_ = sysconf(_SC_PAGESIZE);
-	ck_assert_int_lt(0, pagesize_);
-	ck_assert_int_eq(pagesize_, (ssize_t)pagesize_);
 }
 
 static void setup(void)
@@ -44,15 +42,10 @@ static void teardown(void)
 
 /* pagesize */
 
-START_TEST(test_getpagesize)
+START_TEST(test_pagesize)
 {
+	ck_assert_int_eq(4096L, pagesize_);
 	ck_assert_int_eq(4096, getpagesize());
-}
-END_TEST
-
-START_TEST(test_sysconf_SC_PAGESIZE)
-{
-	ck_assert_int_eq(4096L, sysconf(_SC_PAGESIZE));
 }
 END_TEST
 
@@ -60,7 +53,7 @@ START_TEST(test_valloc_alignment)
 {
 	void *const ptr = valloc(1);
 	assert_not_nullptr(ptr);
-	ck_assert_uint_eq(0, (uintptr_t)ptr % sysconf(_SC_PAGESIZE));
+	ck_assert_uint_eq(0, (uintptr_t)ptr % pagesize_);
 	free(ptr);
 }
 END_TEST
@@ -68,31 +61,31 @@ END_TEST
 /* direct_write */
 
 static void subtest_direct_write(
-	int err, ssize_t ret, void *(*alloc)(size_t), size_t size)
+	int err, ssize_t ret, void *(*alloc)(size_t))
 {
-	ptr_ = alloc(size);
+	ptr_ = alloc(pagesize_);
 	assert_not_nullptr(ptr_);
 
-	assert_error(err, ret, write(fd_, ptr_, size));
+	assert_error(err, ret, write(fd_, ptr_, pagesize_));
 }
 
 START_TEST(test_direct_write_success)
 {
-	subtest_direct_write(EOK, pagesize_, valloc, pagesize_);
+	subtest_direct_write(EOK, pagesize_, valloc);
 }
 END_TEST
 
 START_TEST(test_direct_write_failure)
 {
-	subtest_direct_write(EINVAL, C_ERR, malloc, pagesize_);
+	subtest_direct_write(EINVAL, C_ERR, malloc);
 }
 END_TEST
 
 int main()
 {
 	TCase *const tcase1 = tcase_create("pagesize");
-	tcase_add_test(tcase1, test_getpagesize);
-	tcase_add_test(tcase1, test_sysconf_SC_PAGESIZE);
+	tcase_add_unchecked_fixture(tcase1, setup_once, NULL);
+	tcase_add_test(tcase1, test_pagesize);
 	tcase_add_test(tcase1, test_valloc_alignment);
 
 	TCase *const tcase2 = tcase_create("direct_write");

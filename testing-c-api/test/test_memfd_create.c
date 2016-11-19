@@ -44,11 +44,13 @@ static void assert_fdopen(const char *mode)
 	const int fd = memfd_create(MEMFD_NAME, 0);
 	assert_not_failure(fd);
 
+	/* fdopen can wrap memfd */
 	FILE *const stream = fdopen(fd, mode);
 	assert_not_nullptr(stream);
 
+	/* fd is closed in fclose */
 	assert_success(close(fd));
-	/* DO NOT close fd! it is already closed in fclose */
+	assert_error(EBADF, C_ERR, close(fd));
 }
 
 START_TEST(test_fdopen)
@@ -62,13 +64,12 @@ START_TEST(test_fread)
 {
 	static const size_t len = (size_t)2*1024*1024; /* 2MiB */
 
-	const int fd = memfd_create("test_memfd_create", 0);
+	const int fd = memfd_create(MEMFD_NAME, 0);
 	assert_not_failure(fd);
 
+	/* prepare data to write */
 	char *const wbuf = malloc(len);
 	assert_not_nullptr(wbuf);
-
-	/* prepare some data */
 	for (size_t i = 0; i < len; ++i) {
 		wbuf[i] = (char)(uintptr_t)(&wbuf[i]);
 	}
@@ -77,33 +78,38 @@ START_TEST(test_fread)
 	const ssize_t ret = write(fd, wbuf, len);
 	assert_not_failure(ret);
 	ck_assert_uint_eq(len, (size_t)ret);
+
+	/* check position */
 	ck_assert_int_eq(ret, lseek(fd, 0, SEEK_CUR)); /* tell */
 	ck_assert_int_eq(0, lseek(fd, 0, SEEK_SET)); /* rewind */
 	ck_assert_int_eq(0, lseek(fd, 0, SEEK_CUR)); /* tell */
 
+	/* fdopen can wrap memfd */
 	FILE *const stream = fdopen(fd, "r"); /* read-only */
 	assert_not_nullptr(stream);
 
+	/* fstat can get size of memfd */
 	struct stat st = { 0 };
 	assert_success(fstat(fileno(stream), &st));
 	ck_assert_int_eq(ret, st.st_size);
 
+	/* read whole the data */
 	void *const rbuf = malloc(len);
 	assert_not_nullptr(rbuf);
-
-	/* read whole the data */
 	ck_assert_uint_eq(len, fread(rbuf, 1, len, stream));
 	ck_assert_int_eq(C_FALSE, feof(stream));
 	ck_assert_int_eq(C_EQUAL, memcmp(wbuf, rbuf, len));
-
-	/* enf of file */
-	ck_assert_uint_eq(0, fread(rbuf, 1, 1, stream));
-	ck_assert_int_ne(C_FALSE, feof(stream));
-
 	free(rbuf);
 	free(wbuf);
+
+	/* end of file */
+	char dummy = 0;
+	ck_assert_uint_eq(0, fread(&dummy, 1, 1, stream));
+	ck_assert_int_ne(C_FALSE, feof(stream));
+
+	/* fd is closed in fclose */
 	assert_success(fclose(stream));
-	/* DO NOT close fd! it is already closed in fclose */
+	assert_error(EBADF, C_ERR, close(fd));
 }
 END_TEST
 
