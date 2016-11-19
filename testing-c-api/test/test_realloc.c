@@ -7,43 +7,36 @@
 static const size_t SIZE_4K = (size_t)4*1024;
 static const size_t SIZE_2M = (size_t)2*1024*1024;
 
-static void assert_realloc_success(void *ptr, size_t size)
+static void assert_realloc(int err, int ret, void *ptr, size_t size)
 {
-	errno = 0;
+	errno = EOK;
 	void *const r = realloc(ptr, size);
 	const int e = errno;
-	assert_not_nullptr(r);
-	ck_assert_int_eq(EOK, e);
-	free(r);
+	ck_assert_int_eq(ret, !!r);
+	ck_assert_int_eq(err, e);
+	free(e == EOK ? r : ptr);
+}
+
+static void assert_realloc_success(void *ptr, size_t size)
+{
+	/* returns non-NULL */
+	assert_realloc(EOK, !NULL, ptr, size);
 }
 
 static void assert_realloc_free(void *ptr)
 {
-	static const size_t size = 0;
-
-	errno = 0;
-	void *const r = realloc(ptr, size);
-	const int e = errno;
-	assert_nullptr(r);
-	ck_assert_int_eq(EOK, e);
-	/* ptr is already free-ed by realloc */
+	/* returns NULL but errno is not set */
+	assert_realloc(EOK, !!NULL, ptr, 0);
 }
 
 static void assert_realloc_enomem(void *ptr)
 {
-	static const size_t size = SIZE_MAX;
-
-	errno = 0;
-	void *const r = realloc(ptr, size);
-	const int e = errno;
-	assert_nullptr(r);
-	ck_assert_int_eq(ENOMEM, e);
-	free(ptr);
+	/* returns NULL and errno is ENOMEM */
+	assert_realloc(ENOMEM, !!NULL, ptr, SIZE_MAX);
 }
 
 START_TEST(test_success)
 {
-
 	assert_realloc_success(NULL, 0);
 	assert_realloc_success(NULL, 1);
 
