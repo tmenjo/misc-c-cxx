@@ -16,6 +16,7 @@
 /* macros */
 #define assert_success(ret) ck_assert_int_eq(C_OK, (ret))
 #define assert_not_failure(ret) ck_assert_int_ne(C_ERR, (ret))
+#define assert_nullptr(ret) ck_assert_ptr_eq(NULL, (ret))
 #define assert_not_nullptr(ret) ck_assert_ptr_ne(NULL, (ret))
 /* note that expr is lazy-evaluated */
 #define assert_error(err, ret, expr)			\
