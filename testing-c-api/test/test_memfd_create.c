@@ -50,7 +50,7 @@ static void assert_fdopen(const char *mode)
 
 	/* fd is closed in fclose */
 	assert_success(close(fd));
-	assert_error(EBADF, C_ERR, close(fd));
+	assert_failure(EBADF, close(fd));
 }
 
 START_TEST(test_fdopen)
@@ -109,7 +109,7 @@ START_TEST(test_fread)
 
 	/* fd is closed in fclose */
 	assert_success(fclose(stream));
-	assert_error(EBADF, C_ERR, close(fd));
+	assert_failure(EBADF, close(fd));
 }
 END_TEST
 

@@ -27,5 +27,6 @@
 		ck_assert_int_eq((ret), r);		\
 		ck_assert_int_eq((err), e);		\
 	} while(0)
+#define assert_failure(err, expr) assert_error((err), C_ERR, (expr))
 
 #endif /* CHECKUTIL_INL_H */
