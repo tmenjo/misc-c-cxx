@@ -1,3 +1,4 @@
+/test_chdir
 /test_direct_io
 /test_memfd_create
 /test_pagesize_alignment
