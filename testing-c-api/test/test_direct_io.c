@@ -11,13 +11,13 @@
 static const size_t PTRSIZE = sizeof(void *);
 static const size_t HUGEPAGESIZE = (size_t)2*1024*1024; /* 2MiB */
 
-static long pagesize_ = C_ERR;
+static size_t pagesize_ = 0;
 static int fd_ = C_ERR;
 static void *ptr_ = NULL;
 
 static void setup_once(void)
 {
-	pagesize_ = sysconf(_SC_PAGESIZE);
+	pagesize_ = (size_t)sysconf(_SC_PAGESIZE);
 }
 
 static void setup(void)
@@ -60,28 +60,16 @@ static void assert_posix_memalign_success(size_t alignment, size_t size)
 	assert_alignment(alignment, ptr);
 }
 
-static void assert_posix_memalign_failure(
-	int err, size_t alignment, size_t size)
-{
-	void *ptr = NULL;
-	const int e = posix_memalign(&ptr, alignment, size);
-	ck_assert_int_eq(err, e);
-}
-
 static void assert_posix_memalign_einval(size_t alignment)
 {
-	assert_posix_memalign_failure(EINVAL, alignment, 1);
-}
-
-static void assert_posix_memalign_enomem(size_t alignment)
-{
-	assert_posix_memalign_failure(ENOMEM, alignment, SIZE_MAX);
+	void *ptr = NULL;
+	ck_assert_int_eq(EINVAL, posix_memalign(&ptr, alignment, 1));
 }
 
 /* is pagesize 4KiB? */
 START_TEST(test_pagesize)
 {
-	ck_assert_int_eq(4096L, pagesize_);
+	ck_assert_uint_eq(4096, pagesize_);
 	ck_assert_int_eq(4096, getpagesize());
 }
 END_TEST
@@ -96,7 +84,7 @@ START_TEST(test_valloc_alignment)
 }
 END_TEST
 
-START_TEST(test_posix_memalign)
+START_TEST(test_posix_memalign_success)
 {
 	assert_posix_memalign_success(PTRSIZE, 1);
 	assert_posix_memalign_success(PTRSIZE, 3);
@@ -107,10 +95,11 @@ START_TEST(test_posix_memalign)
 	assert_posix_memalign_success(pagesize_, 3);
 	assert_posix_memalign_success(pagesize_, pagesize_);
 	assert_posix_memalign_success(pagesize_, HUGEPAGESIZE);
+}
+END_TEST
 
-	assert_posix_memalign_enomem(PTRSIZE);
-	assert_posix_memalign_enomem(pagesize_);
-
+START_TEST(test_posix_memalign_einval)
+{
 	assert_posix_memalign_einval(0);
 	assert_posix_memalign_einval(1);
 	assert_posix_memalign_einval(2);
@@ -126,25 +115,15 @@ END_TEST
 
 /* direct_write */
 
-static void *posix_memalign_alloc(size_t alignment, size_t size)
+static void *posix_memalign_pagesize(size_t size)
 {
 	void *ptr = NULL;
-	const int ret = posix_memalign(&ptr, alignment, size);
+	const int ret = posix_memalign(&ptr, pagesize_, size);
 	return (ret == 0) ? ptr : NULL;
 }
 
-static void *posix_memalign_ptrsize(size_t size)
-{
-	return posix_memalign_alloc(PTRSIZE, size);
-}
-
-static void *posix_memalign_pagesize(size_t size)
-{
-	return posix_memalign_alloc(pagesize_, size);
-}
-
 static void assert_direct_write(
-	int err, ssize_t ret, void *(alloc)(size_t), size_t size)
+	int err, ssize_t ret, void *(*alloc)(size_t), size_t size)
 {
 	setup();
 	ptr_ = alloc(size);
@@ -156,9 +135,7 @@ static void assert_direct_write(
 static void assert_direct_write_success(
 	void *(*alloc)(size_t), size_t size)
 {
-	const ssize_t ret = (ssize_t)size;
-	ck_assert_int_lt(0, ret);
-	assert_direct_write(EOK, ret, alloc, size);
+	assert_direct_write(EOK, (ssize_t)size, alloc, size);
 }
 
 static void assert_direct_write_einval(
@@ -167,15 +144,25 @@ static void assert_direct_write_einval(
 	assert_direct_write(EINVAL, C_ERR, alloc, size);
 }
 
-START_TEST(test_direct_write)
+START_TEST(test_direct_write_success)
 {
 	assert_direct_write_success(valloc, pagesize_);
 	assert_direct_write_success(valloc, HUGEPAGESIZE);
+
 	assert_direct_write_success(posix_memalign_pagesize, pagesize_);
 	assert_direct_write_success(posix_memalign_pagesize, HUGEPAGESIZE);
+}
+END_TEST
 
-	assert_direct_write_einval(malloc, pagesize_);
-	assert_direct_write_einval(posix_memalign_ptrsize, pagesize_);
+START_TEST(test_direct_write_einval)
+{
+	assert_direct_write_einval(valloc, 1);
+	assert_direct_write_einval(valloc, 3);
+	assert_direct_write_einval(valloc, PTRSIZE);
+
+	assert_direct_write_einval(posix_memalign_pagesize, 1);
+	assert_direct_write_einval(posix_memalign_pagesize, 3);
+	assert_direct_write_einval(posix_memalign_pagesize, PTRSIZE);
 }
 END_TEST
 
@@ -185,11 +172,13 @@ int main()
 	tcase_add_unchecked_fixture(tcase1, setup_once, NULL);
 	tcase_add_test(tcase1, test_pagesize);
 	tcase_add_test(tcase1, test_valloc_alignment);
-	tcase_add_test(tcase1, test_posix_memalign);
+	tcase_add_test(tcase1, test_posix_memalign_success);
+	tcase_add_test(tcase1, test_posix_memalign_einval);
 
 	TCase *const tcase2 = tcase_create("direct_write");
 	tcase_add_unchecked_fixture(tcase2, setup_once, NULL);
-	tcase_add_test(tcase2, test_direct_write);
+	tcase_add_test(tcase2, test_direct_write_success);
+	tcase_add_test(tcase2, test_direct_write_einval);
 
 	Suite *const suite = suite_create("direct_io");
 	suite_add_tcase(suite, tcase1);
