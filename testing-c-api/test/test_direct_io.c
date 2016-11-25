@@ -158,11 +158,9 @@ START_TEST(test_direct_write_einval)
 {
 	assert_direct_write_einval(valloc, 1);
 	assert_direct_write_einval(valloc, 3);
-	assert_direct_write_einval(valloc, PTRSIZE);
 
 	assert_direct_write_einval(posix_memalign_pagesize, 1);
 	assert_direct_write_einval(posix_memalign_pagesize, 3);
-	assert_direct_write_einval(posix_memalign_pagesize, PTRSIZE);
 }
 END_TEST
 

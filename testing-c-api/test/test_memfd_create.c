@@ -34,8 +34,8 @@ START_TEST(test_create_two)
 	assert_not_failure(fd2);
 	ck_assert_int_ne(fd1, fd2);
 
-	assert_success(close(fd2));
 	assert_success(close(fd1));
+	assert_success(close(fd2));
 }
 END_TEST
 
@@ -49,7 +49,7 @@ static void assert_fdopen(const char *mode)
 	assert_not_nullptr(stream);
 
 	/* fd is closed in fclose */
-	assert_success(close(fd));
+	assert_success(fclose(stream));
 	assert_failure(EBADF, close(fd));
 }
 
@@ -70,9 +70,8 @@ START_TEST(test_fread)
 	/* prepare data to write */
 	char *const wbuf = malloc(len);
 	assert_not_nullptr(wbuf);
-	for (size_t i = 0; i < len; ++i) {
+	for (size_t i = 0; i < len; ++i)
 		wbuf[i] = (char)(uintptr_t)(&wbuf[i]);
-	}
 
 	/* write whole the data */
 	const ssize_t ret = write(fd, wbuf, len);
@@ -120,6 +119,7 @@ int main()
 	tcase_add_test(tcase, test_create_two);
 	tcase_add_test(tcase, test_fdopen);
 	tcase_add_test(tcase, test_fread);
+
 	Suite *const suite = suite_create("memfd_create");
 	suite_add_tcase(suite, tcase);
 

@@ -35,7 +35,7 @@ static void assert_realloc_enomem(void *ptr)
 	assert_realloc(ENOMEM, !!NULL, ptr, SIZE_MAX);
 }
 
-START_TEST(test_success)
+START_TEST(test_realloc_success)
 {
 	assert_realloc_success(NULL, 0);
 	assert_realloc_success(NULL, 1);
@@ -51,7 +51,7 @@ START_TEST(test_success)
 }
 END_TEST
 
-START_TEST(test_free)
+START_TEST(test_realloc_free)
 {
 	assert_realloc_free(malloc(1));
 	assert_realloc_free(calloc(1, 1));
@@ -59,7 +59,7 @@ START_TEST(test_free)
 }
 END_TEST
 
-START_TEST(test_enomem)
+START_TEST(test_realloc_enomem)
 {
 	assert_realloc_enomem(NULL);
 	assert_realloc_enomem(malloc(1));
@@ -71,9 +71,9 @@ END_TEST
 int main()
 {
 	TCase *const tcase = tcase_create("realloc");
-	tcase_add_test(tcase, test_success);
-	tcase_add_test(tcase, test_free);
-	tcase_add_test(tcase, test_enomem);
+	tcase_add_test(tcase, test_realloc_success);
+	tcase_add_test(tcase, test_realloc_free);
+	tcase_add_test(tcase, test_realloc_enomem);
 
 	Suite *const suite = suite_create("realloc");
 	suite_add_tcase(suite, tcase);
