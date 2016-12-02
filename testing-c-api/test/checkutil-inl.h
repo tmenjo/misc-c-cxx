@@ -19,6 +19,13 @@
 #define assert_nullptr(ret) ck_assert_ptr_eq(NULL, (ret))
 #define assert_not_nullptr(ret) ck_assert_ptr_ne(NULL, (ret))
 /* note that expr is lazy-evaluated */
+#define assert_success_or_error(err, expr)	\
+	do {					\
+		if ((expr) == 0)		\
+			break;			\
+		const int e = errno;		\
+		ck_assert_int_eq((err), e);	\
+	} while (0)
 #define assert_error(err, ret, expr)			\
 	do {						\
 		errno = EOK;				\
@@ -26,7 +33,7 @@
 		const int e = errno;			\
 		ck_assert_int_eq((ret), r);		\
 		ck_assert_int_eq((err), e);		\
-	} while(0)
+	} while (0)
 #define assert_failure(err, expr) assert_error((err), C_ERR, (expr))
 
 #endif /* CHECKUTIL_INL_H */
