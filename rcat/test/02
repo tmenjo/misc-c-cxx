@@ -1,0 +1,9 @@
+#!/bin/bash
+export LANG=C LC_ALL=C
+bin="${0%/*}"/../main
+
+# simple csv concat
+diff -su ok-3r2c-4r3c.csv <("$bin"/rcat -d, ok-3r2c.csv ok-4r3c.csv)
+[ $? -eq 0 ] || exit 1
+
+echo OK

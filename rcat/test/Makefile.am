@@ -1,0 +1,3 @@
+MAINTAINERCLEANFILES = Makefile.in
+
+TESTS = ./00 ./01 ./02
