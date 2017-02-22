@@ -1,6 +1,10 @@
 /test_chdir
 /test_direct_io
+/test_eventfd
+/test_fork
 /test_memfd_create
 /test_pagesize_alignment
+/test_pipe
+/test_pthread
 /test_realloc
 /test_signal
