@@ -6,6 +6,14 @@
 
 #define C_CHILD 0
 
+#define assert_child_exited(code, cpid) \
+	do {								\
+		int status = C_ERR;					\
+		ck_assert_int_eq(cpid, waitpid(cpid, &status, 0));	\
+		ck_assert(WIFEXITED(status));				\
+		ck_assert_int_eq(code, WEXITSTATUS(status));		\
+	} while(0)
+
 static void assert_exit(int code1, int code2)
 {
 	const pid_t cpid = fork();
@@ -16,10 +24,7 @@ static void assert_exit(int code1, int code2)
 		_exit(code1);
 	}
 
-	int status = C_ERR;
-	ck_assert_int_eq(cpid, waitpid(cpid, &status, 0));
-	ck_assert(WIFEXITED(status));
-	ck_assert_int_eq(code2, WEXITSTATUS(status));
+	assert_child_exited(code2, cpid);
 }
 
 START_TEST(test_exit)
