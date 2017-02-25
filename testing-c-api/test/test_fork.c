@@ -1,5 +1,4 @@
-#include <sys/wait.h>	/* waitpid */
-#include <unistd.h>	/* fork, _exit */
+#include <unistd.h>
 
 #include <check.h>
 #include "checkutil-inl.h"
@@ -14,7 +13,6 @@ static void assert_exit(int code1, int code2)
 	case C_CHILD:
 		_exit(code1);
 	}
-
 	assert_child_exited(code2, cpid);
 }
 

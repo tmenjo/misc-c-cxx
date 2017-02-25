@@ -1,8 +1,7 @@
-#include <signal.h>	/* sigaction */
+#include <signal.h>	/* kill, raise */
 #include <stdbool.h>
 #include <stdlib.h>	/* abort */
 #include <sys/eventfd.h>
-#include <sys/wait.h>	/* waitpid */
 #include <unistd.h>	/* fork, pause */
 
 #include <check.h>

@@ -1,5 +1,4 @@
-#include <sys/wait.h>	/* waitpid */
-#include <unistd.h>	/* fork */
+#include <unistd.h>
 
 #include <check.h>
 #include "checkutil-inl.h"

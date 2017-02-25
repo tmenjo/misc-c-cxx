@@ -10,14 +10,14 @@
 
 /* macros */
 #define assert_child_exited(code, cpid) do {			\
-	int status = C_ERR;					\
+	int status = -1;					\
 	ck_assert_int_eq(cpid, waitpid(cpid, &status, 0));	\
 	ck_assert(WIFEXITED(status));				\
 	ck_assert_int_eq(code, WEXITSTATUS(status));		\
 } while(0)
 
 #define assert_child_signaled(sig, cpid) do {			\
-	int status = C_ERR;					\
+	int status = -1;					\
 	ck_assert_int_eq(cpid, waitpid(cpid, &status, 0));	\
 	ck_assert(WIFSIGNALED(status));				\
 	ck_assert_int_eq(sig, WTERMSIG(status));		\
