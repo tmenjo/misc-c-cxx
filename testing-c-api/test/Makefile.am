@@ -6,6 +6,7 @@ LDADD = @CHECK_LIBS@
 TESTS = \
 	test_chdir \
 	test_direct_io \
+	test_epoll \
 	test_eventfd \
 	test_fork \
 	test_memfd_create \
@@ -21,6 +22,7 @@ test_pthread_CFLAGS = -pthread
 
 test_chdir_SOURCES = test_chdir.c
 test_direct_io_SOURCES = test_direct_io.c
+test_epoll_SOURCES = test_epoll.c
 test_eventfd_SOURCES = test_eventfd.c
 test_fork_SOURCES = test_fork.c
 test_memfd_create_SOURCES = test_memfd_create.c

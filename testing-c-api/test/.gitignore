@@ -1,5 +1,6 @@
 /test_chdir
 /test_direct_io
+/test_epoll
 /test_eventfd
 /test_fork
 /test_memfd_create
