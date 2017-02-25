@@ -12,6 +12,7 @@ TESTS = \
 	test_pipe \
 	test_pthread \
 	test_realloc \
+	test_seqpacket \
 	test_signal
 
 check_PROGRAMS = $(TESTS)
@@ -26,4 +27,5 @@ test_memfd_create_SOURCES = test_memfd_create.c
 test_pipe_SOURCES = test_pipe.c
 test_pthread_SOURCES = test_pthread.c
 test_realloc_SOURCES = test_realloc.c
+test_seqpacket_SOURCES = test_seqpacket.c
 test_signal_SOURCES = test_signal.c
