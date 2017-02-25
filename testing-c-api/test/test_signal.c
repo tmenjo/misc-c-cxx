@@ -7,8 +7,7 @@
 
 #include <check.h>
 #include "checkutil-inl.h"
-
-#define C_CHILD 0
+#include "checkutil-wait-inl.h"
 
 #define SZ_U64 sizeof(uint64_t)
 #define SSZ_U64 (ssize_t)SZ_U64
@@ -17,13 +16,6 @@ void do_nothing_handler(int sig)
 {
 	(void)sig;
 }
-
-#define assert_child_signaled(sig, cpid) do {			\
-	int status = C_ERR;					\
-	ck_assert_int_eq(cpid, waitpid(cpid, &status, 0));	\
-	ck_assert(WIFSIGNALED(status));				\
-	ck_assert_int_eq(sig, WTERMSIG(status));		\
-} while(0)
 
 #define assert_reset_sigaction(sig) do {			\
 	struct sigaction oldact = { 0 };			\

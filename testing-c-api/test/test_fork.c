@@ -3,16 +3,7 @@
 
 #include <check.h>
 #include "checkutil-inl.h"
-
-#define C_CHILD 0
-
-#define assert_child_exited(code, cpid) \
-	do {								\
-		int status = C_ERR;					\
-		ck_assert_int_eq(cpid, waitpid(cpid, &status, 0));	\
-		ck_assert(WIFEXITED(status));				\
-		ck_assert_int_eq(code, WEXITSTATUS(status));		\
-	} while(0)
+#include "checkutil-wait-inl.h"
 
 static void assert_exit(int code1, int code2)
 {

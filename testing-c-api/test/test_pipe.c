@@ -3,8 +3,8 @@
 
 #include <check.h>
 #include "checkutil-inl.h"
+#include "checkutil-wait-inl.h"
 
-#define C_CHILD 0
 #define C_READ 0
 #define C_WRITE 1
 
@@ -63,18 +63,12 @@ static void assert_parent_write_magic(int in, int out)
 
 static void assert_status_exited(pid_t cpid, int code)
 {
-	int status = C_ERR;
-	ck_assert_int_eq(cpid, waitpid(cpid, &status, 0));
-	ck_assert(WIFEXITED(status));
-	ck_assert_int_eq(code, WEXITSTATUS(status));
+	assert_child_exited(code, cpid);
 }
 
 static void assert_status_signaled(pid_t cpid, int signal)
 {
-	int status = C_ERR;
-	ck_assert_int_eq(cpid, waitpid(cpid, &status, 0));
-	ck_assert(WIFSIGNALED(status));
-	ck_assert_int_eq(signal, WTERMSIG(status));
+	assert_child_signaled(signal, cpid);
 }
 
 /*
