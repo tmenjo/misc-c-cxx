@@ -8,4 +8,7 @@
 /test_pthread
 /test_realloc
 /test_seqpacket
-/test_signal
+/test_signal_abort
+/test_signal_alarm
+/test_signal_kill
+/test_signal_raise
