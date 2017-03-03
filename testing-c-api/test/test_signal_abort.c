@@ -24,7 +24,7 @@ static bool wait_event(int efd)
 	return (SSZ_U64 == read(efd, &ret, SZ_U64) && ret == 1);
 }
 
-static int efd_ = -1;
+static int efd_ = C_ERR;
 
 static void setup()
 {
@@ -46,7 +46,7 @@ START_TEST(test_abort_default)
 	case C_CHILD:
 		assert_default_sighandler(SIGABRT);
 		abort();
-		_exit(1); /* should not be here */
+		_exit(EXIT_FAILURE); /* should not be here */
 	}
 	assert_child_signaled(SIGABRT, cpid);
 }
@@ -61,7 +61,7 @@ START_TEST(test_abort_ignore)
 	case C_CHILD:
 		assert_set_ignoring_sighandler(SIGABRT);
 		abort();
-		_exit(1); /* should not be here */
+		_exit(EXIT_FAILURE); /* should not be here */
 	}
 	assert_child_signaled(SIGABRT, cpid);
 }
@@ -81,16 +81,16 @@ START_TEST(test_abort_return)
 	case C_CHILD:
 		assert_set_sighandler(SIGABRT, do_nothing);
 		abort();
-		_exit(1); /* should not be here */
+		_exit(EXIT_FAILURE); /* should not be here */
 	}
 	assert_child_signaled(SIGABRT, cpid);
 }
 END_TEST
 
-static void exit_failure(int sig)
+static void exit_success(int sig)
 {
 	(void)sig;
-	_exit(1);
+	_exit(EXIT_SUCCESS);
 }
 
 START_TEST(test_abort_catch_exit)
@@ -104,11 +104,11 @@ START_TEST(test_abort_catch_exit)
 		 * A signal handler can catch SIGABRT thrown by abort().
 		 * It can also _exit() inside it.
 		 */
-		assert_set_sighandler(SIGABRT, exit_failure);
+		assert_set_sighandler(SIGABRT, exit_success);
 		abort();
-		_exit(0); /* should not be here */
+		_exit(EXIT_FAILURE); /* should not be here */
 	}
-	assert_child_exited(1, cpid);
+	assert_child_exited(EXIT_SUCCESS, cpid);
 }
 END_TEST
 
@@ -131,7 +131,7 @@ START_TEST(test_abort_catch_notify)
 		 */
 		assert_set_sighandler(SIGABRT, notify_aborting);
 		abort();
-		_exit(1); /* should not be here */
+		_exit(EXIT_FAILURE); /* should not be here */
 	}
 	ck_assert(wait_event(efd_));
 	assert_child_signaled(SIGABRT, cpid);
