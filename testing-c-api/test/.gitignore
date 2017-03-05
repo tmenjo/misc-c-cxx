@@ -1,4 +1,5 @@
 /test_blocking_queue
+/test_concurrent_set
 /test_chdir
 /test_direct_io
 /test_epoll

@@ -5,6 +5,7 @@ LDADD = @CHECK_LIBS@
 
 TESTS = \
 	test_blocking_queue \
+	test_concurrent_set \
 	test_chdir \
 	test_direct_io \
 	test_epoll \
@@ -25,9 +26,11 @@ TESTS = \
 check_PROGRAMS = $(TESTS)
 
 test_blocking_queue_CFLAGS = -pthread
+test_concurrent_set_CFLAGS = -pthread
 test_pthread_CFLAGS = -pthread
 
 test_blocking_queue_SOURCES = test_blocking_queue.c blocking_queue.c
+test_concurrent_set_SOURCES = test_concurrent_set.c concurrent_set.c
 test_chdir_SOURCES = test_chdir.c
 test_direct_io_SOURCES = test_direct_io.c
 test_epoll_SOURCES = test_epoll.c
