@@ -12,3 +12,4 @@
 /test_signal_alarm
 /test_signal_kill
 /test_signal_raise
+/test_stailq
