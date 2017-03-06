@@ -70,6 +70,9 @@ int bq_size(struct bq *queue)
 
 _Bool bq_put(struct bq *queue, void *raw)
 {
+	if (unlikely(!raw))
+		return 0;
+
 	struct bq_elem *const wrap = malloc(sizeof(struct bq_elem));
 	wrap->elem_ = raw;
 
@@ -91,6 +94,9 @@ _Bool bq_put(struct bq *queue, void *raw)
 
 _Bool bq_offer(struct bq *queue, void *raw)
 {
+	if (unlikely(!raw))
+		return 0;
+
 	_Bool ret = 0; /* assume failure */
 	struct bq_elem *const wrap = malloc(sizeof(struct bq_elem));
 	wrap->elem_ = raw;

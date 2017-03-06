@@ -34,14 +34,14 @@ int bq_size(struct bq *queue);
  * If the queue is full (that is, its size is equal to its capacity),
  * bq_put() blocks a calling thread until bq_take() removes an element.
  *
- * @return 1 always.
+ * @return 1 if "element" is not NULL; 0 otherwise.
  */
 _Bool bq_put(struct bq *queue, void *element);
 
 /**
  * Non-blocking version of bq_put().
  *
- * @return 1 if success; 0 otherwise.
+ * @return 1 if "element" is not NULL and success; 0 otherwise.
  */
 _Bool bq_offer(struct bq *queue, void *element);
 
@@ -50,6 +50,8 @@ _Bool bq_offer(struct bq *queue, void *element);
  *
  * If the queue is empty (that is, its size is equal to 0),
  * bq_take() blocks a calling thread until bq_put() inserts a new element.
+ *
+ * @return non-NULL pointer to a taken element.
  */
 void *bq_take(struct bq *queue);
 

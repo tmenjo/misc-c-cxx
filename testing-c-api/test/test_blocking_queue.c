@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <pthread.h>
 #include <stdlib.h>
 
@@ -5,6 +6,39 @@
 
 #include <check.h>
 #include "checkutil-inl.h"
+
+START_TEST(test_capacity)
+{
+	/* capacity should be positive */
+	assert_nullptr(bq_new(INT_MIN));
+	assert_nullptr(bq_new(-1));
+	assert_nullptr(bq_new(0));
+
+	struct bq *const queue = bq_new(INT_MAX);
+	assert_not_nullptr(queue);
+	ck_assert_int_eq(INT_MAX, bq_capacity(queue));
+	ck_assert_int_eq(0, bq_size(queue));
+	bq_destroy(queue, NULL);
+}
+END_TEST
+
+START_TEST(test_null_element)
+{
+	struct bq *const queue = bq_new(1);
+	assert_not_nullptr(queue);
+
+	/* NULL cannot be put */
+	ck_assert(!bq_put(queue, NULL));
+	ck_assert(!bq_offer(queue, NULL));
+
+	/* non-blocking return */
+	int a = 3;
+	ck_assert(bq_put(queue, &a));
+	ck_assert(!bq_put(queue, NULL));
+
+	bq_destroy(queue, NULL);
+}
+END_TEST
 
 START_TEST(test_fifo)
 {
@@ -143,6 +177,8 @@ static void *run_consumer(void *arg)
 int main()
 {
 	TCase *const tcase = tcase_create("all");
+	tcase_add_test(tcase, test_capacity);
+	tcase_add_test(tcase, test_null_element);
 	tcase_add_test(tcase, test_fifo);
 	tcase_add_test(tcase, test_nonblock);
 	tcase_add_test(tcase, test_dtor);
