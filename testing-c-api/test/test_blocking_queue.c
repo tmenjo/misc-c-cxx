@@ -42,39 +42,39 @@ END_TEST
 
 START_TEST(test_fifo)
 {
-	struct bq *queue = bq_new(3);
+	struct bq *const queue = bq_new(3);
 	assert_not_nullptr(queue);
 	ck_assert_int_eq(3, bq_capacity(queue));
 	ck_assert_int_eq(0, bq_size(queue));
 
 	int a = 3, b = 2, c = 5;
-	ck_assert(bq_put(queue, (void *)&a));
+	ck_assert(bq_put(queue, &a));
 	ck_assert_int_eq(1, bq_size(queue));
-	ck_assert(bq_put(queue, (void *)&b));
+	ck_assert(bq_put(queue, &b));
 	ck_assert_int_eq(2, bq_size(queue));
-	ck_assert(bq_put(queue, (void *)&c));
+	ck_assert(bq_put(queue, &c));
 	ck_assert_int_eq(3, bq_size(queue));
 
-	int *const ap = (int *)bq_take(queue);
+	int *const ap = bq_take(queue);
 	ck_assert_int_eq(2, bq_size(queue));
 	ck_assert_ptr_eq(&a, ap);
 	ck_assert_int_eq(3, *ap);
 
-	int *const bp = (int *)bq_take(queue);
+	int *const bp = bq_take(queue);
 	ck_assert_int_eq(1, bq_size(queue));
 	ck_assert_ptr_eq(&b, bp);
 	ck_assert_int_eq(2, *bp);
 
 	int d = 1;
-	ck_assert(bq_put(queue, (void *)&d));
+	ck_assert(bq_put(queue, &d));
 	ck_assert_int_eq(2, bq_size(queue));
 
-	int *const cp = (int *)bq_take(queue);
+	int *const cp = bq_take(queue);
 	ck_assert_int_eq(1, bq_size(queue));
 	ck_assert_ptr_eq(&c, cp);
 	ck_assert_int_eq(5, *cp);
 
-	int *const dp = (int *)bq_take(queue);
+	int *const dp = bq_take(queue);
 	ck_assert_int_eq(0, bq_size(queue));
 	ck_assert_ptr_eq(&d, dp);
 	ck_assert_int_eq(1, *dp);
@@ -103,22 +103,26 @@ END_TEST
 
 START_TEST(test_dtor)
 {
-	struct bq *queue = bq_new(3);
+	struct bq *const queue = bq_new(3);
 	assert_not_nullptr(queue);
 
 	int *const ap = calloc(1, sizeof(int));
-	int *const bp = calloc(1, sizeof(int));
-	int *const cp = calloc(1, sizeof(int));
-
+	assert_not_nullptr(ap);
 	ck_assert(bq_put(queue, ap));
+	int *const bp = calloc(1, sizeof(int));
+	assert_not_nullptr(bp);
 	ck_assert(bq_put(queue, bp));
+	int *const cp = calloc(1, sizeof(int));
+	assert_not_nullptr(cp);
 	ck_assert(bq_put(queue, cp));
+
 	ck_assert_int_eq(3, bq_size(queue));
 
 	bq_destroy(queue, free);
 }
 END_TEST
 
+#define NR_LOOPS 10000
 static void *run_producer(void *);
 static void *run_consumer(void *);
 START_TEST(test_multithread)
@@ -145,7 +149,7 @@ static void *run_producer(void *arg)
 {
 	struct bq *const queue = (struct bq *)arg;
 
-	for (int i = 0; i < 10000; ++i) {
+	for (int i = 0; i < NR_LOOPS; ++i) {
 		int *const elem = malloc(sizeof(int));
 		*elem = i;
 		bq_put(queue, elem);
@@ -164,7 +168,7 @@ static void *run_consumer(void *arg)
 	pthread_cleanup_push(free, ret);
 
 	*ret = 0;
-	for (int i = 0; i < 10000; ++i) {
+	for (int i = 0; i < NR_LOOPS; ++i) {
 		int *const elem = bq_take(queue);
 		if (i != *elem)
 			*ret = 1; /* failure */
