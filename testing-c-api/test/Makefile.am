@@ -19,7 +19,8 @@ TESTS = \
 	test_signal_alarm \
 	test_signal_kill \
 	test_signal_raise \
-	test_stailq
+	test_stailq \
+	test_tsearch
 
 check_PROGRAMS = $(TESTS)
 
@@ -42,3 +43,4 @@ test_signal_alarm_SOURCES = test_signal_alarm.c
 test_signal_kill_SOURCES = test_signal_kill.c
 test_signal_raise_SOURCES = test_signal_raise.c
 test_stailq_SOURCES = test_stailq.c
+test_tsearch_SOURCES = test_tsearch.c

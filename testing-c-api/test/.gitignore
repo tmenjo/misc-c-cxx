@@ -14,3 +14,4 @@
 /test_signal_kill
 /test_signal_raise
 /test_stailq
+/test_tsearch
