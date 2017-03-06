@@ -68,7 +68,7 @@ int bq_size(struct bq *queue)
 	return ret;
 }
 
-void bq_put(struct bq *queue, void *raw)
+_Bool bq_put(struct bq *queue, void *raw)
 {
 	struct bq_elem *const wrap = malloc(sizeof(struct bq_elem));
 	wrap->elem_ = raw;
@@ -85,6 +85,8 @@ void bq_put(struct bq *queue, void *raw)
 	pthread_cond_broadcast(&queue->cond_can_take_);
 	/* <<< critical section */
 	pthread_cleanup_pop(1); /* execute before remove */
+
+	return 1;
 }
 
 _Bool bq_offer(struct bq *queue, void *raw)

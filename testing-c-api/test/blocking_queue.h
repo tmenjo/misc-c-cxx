@@ -33,8 +33,10 @@ int bq_size(struct bq *queue);
  *
  * If the queue is full (that is, its size is equal to its capacity),
  * bq_put() blocks a calling thread until bq_take() removes an element.
+ *
+ * @return 1 always.
  */
-void bq_put(struct bq *queue, void *element);
+_Bool bq_put(struct bq *queue, void *element);
 
 /**
  * Non-blocking version of bq_put().

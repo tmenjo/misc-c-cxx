@@ -14,11 +14,11 @@ START_TEST(test_fifo)
 	ck_assert_int_eq(0, bq_size(queue));
 
 	int a = 3, b = 2, c = 5;
-	bq_put(queue, (void *)&a);
+	ck_assert(bq_put(queue, (void *)&a));
 	ck_assert_int_eq(1, bq_size(queue));
-	bq_put(queue, (void *)&b);
+	ck_assert(bq_put(queue, (void *)&b));
 	ck_assert_int_eq(2, bq_size(queue));
-	bq_put(queue, (void *)&c);
+	ck_assert(bq_put(queue, (void *)&c));
 	ck_assert_int_eq(3, bq_size(queue));
 
 	int *const ap = (int *)bq_take(queue);
@@ -32,7 +32,7 @@ START_TEST(test_fifo)
 	ck_assert_int_eq(2, *bp);
 
 	int d = 1;
-	bq_put(queue, (void *)&d);
+	ck_assert(bq_put(queue, (void *)&d));
 	ck_assert_int_eq(2, bq_size(queue));
 
 	int *const cp = (int *)bq_take(queue);
@@ -76,9 +76,9 @@ START_TEST(test_dtor)
 	int *const bp = calloc(1, sizeof(int));
 	int *const cp = calloc(1, sizeof(int));
 
-	bq_put(queue, ap);
-	bq_put(queue, bp);
-	bq_put(queue, cp);
+	ck_assert(bq_put(queue, ap));
+	ck_assert(bq_put(queue, bp));
+	ck_assert(bq_put(queue, cp));
 	ck_assert_int_eq(3, bq_size(queue));
 
 	bq_destroy(queue, free);
