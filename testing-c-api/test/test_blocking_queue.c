@@ -9,7 +9,7 @@
 START_TEST(test_fifo)
 {
 	struct bq *queue = bq_new(3);
-	ck_assert_ptr_ne(NULL, queue);
+	assert_not_nullptr(queue);
 	ck_assert_int_eq(3, bq_capacity(queue));
 	ck_assert_int_eq(0, bq_size(queue));
 
@@ -52,7 +52,7 @@ END_TEST
 START_TEST(test_dtor)
 {
 	struct bq *queue = bq_new(3);
-	ck_assert_ptr_ne(NULL, queue);
+	assert_not_nullptr(queue);
 
 	int *const ap = calloc(1, sizeof(int));
 	int *const bp = calloc(1, sizeof(int));
@@ -72,7 +72,7 @@ static void *run_consumer(void *);
 START_TEST(test_multithread)
 {
 	struct bq *const queue = bq_new(10);
-	ck_assert_ptr_ne(NULL, queue);
+	assert_not_nullptr(queue);
 
 	void *ret = NULL;
 	pthread_t p, c;
