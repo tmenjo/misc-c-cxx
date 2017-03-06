@@ -37,12 +37,26 @@ int bq_size(struct bq *queue);
 void bq_put(struct bq *queue, void *element);
 
 /**
+ * Non-blocking version of bq_put().
+ *
+ * @return 1 if success; 0 otherwise.
+ */
+_Bool bq_offer(struct bq *queue, void *element);
+
+/**
  * Get and remove an element from head of a blocking queue.
  *
  * If the queue is empty (that is, its size is equal to 0),
  * bq_take() blocks a calling thread until bq_put() inserts a new element.
  */
 void *bq_take(struct bq *queue);
+
+/**
+ * Non-blocking version of bq_take().
+ *
+ * @return non-NULL pointer to a taken element if success; NULL otherwise.
+ */
+void *bq_poll(struct bq *queue);
 
 /**
  * Destroy a blocking queue.

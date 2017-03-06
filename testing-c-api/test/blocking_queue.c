@@ -87,6 +87,31 @@ void bq_put(struct bq *queue, void *raw)
 	pthread_cleanup_pop(1); /* execute before remove */
 }
 
+_Bool bq_offer(struct bq *queue, void *raw)
+{
+	_Bool ret = 0; /* assume failure */
+	struct bq_elem *const wrap = malloc(sizeof(struct bq_elem));
+	wrap->elem_ = raw;
+
+	if (pthread_mutex_trylock(&queue->mutex_) != 0)
+		goto out;
+
+	/* critical section >>> */
+
+	if (!bq_full_unsafe(queue)) {
+		bq_insert_unsafe(queue, wrap);
+		ret = 1; /* success */
+		pthread_cond_broadcast(&queue->cond_can_take_);
+	}
+
+	/* <<< critical section */
+	pthread_mutex_unlock(&queue->mutex_);
+out:
+	if (!ret)
+		free(wrap);
+	return ret;
+}
+
 void *bq_take(struct bq *queue)
 {
 	/*
@@ -111,6 +136,31 @@ void *bq_take(struct bq *queue)
 	void *const raw = wrap->elem_;
 	free(wrap);
 
+	return raw;
+}
+
+void *bq_poll(struct bq *queue)
+{
+	void *raw = NULL; /* assume failure */
+	struct bq_elem *wrap = NULL; /* assume failure */
+
+	if (pthread_mutex_trylock(&queue->mutex_) != 0)
+		goto out;
+	/* critical section >>> */
+
+	if (!bq_empty_unsafe(queue)) {
+		wrap = bq_remove_unsafe(queue); /* success */
+		pthread_cond_broadcast(&queue->cond_can_put_);
+	}
+
+	/* <<< critical section */
+	pthread_mutex_unlock(&queue->mutex_);
+
+	if (wrap) {
+		raw = wrap->elem_;
+		free(wrap);
+	}
+out:
 	return raw;
 }
 

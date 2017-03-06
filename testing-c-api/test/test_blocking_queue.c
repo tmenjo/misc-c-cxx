@@ -49,6 +49,24 @@ START_TEST(test_fifo)
 }
 END_TEST
 
+START_TEST(test_nonblock)
+{
+	struct bq *queue = bq_new(1);
+	assert_not_nullptr(queue);
+
+	assert_nullptr(bq_poll(queue));
+
+	int a = 3;
+	ck_assert(bq_offer(queue, &a));
+
+	int b = 2;
+	ck_assert(!bq_offer(queue, &b));
+
+	int *const ap = bq_poll(queue);
+	ck_assert_ptr_eq(&a, ap);
+}
+END_TEST
+
 START_TEST(test_dtor)
 {
 	struct bq *queue = bq_new(3);
@@ -126,6 +144,7 @@ int main()
 {
 	TCase *const tcase = tcase_create("all");
 	tcase_add_test(tcase, test_fifo);
+	tcase_add_test(tcase, test_nonblock);
 	tcase_add_test(tcase, test_dtor);
 	tcase_add_test(tcase, test_multithread);
 
