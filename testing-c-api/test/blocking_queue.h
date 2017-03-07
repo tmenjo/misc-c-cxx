@@ -2,16 +2,15 @@
 #define BLOCKING_QUEUE_H
 
 /**
- * Blocking queue (opaque type).
+ * A blocking queue (opaque type).
  */
 struct bq;
 
 /**
  * Create a new blocking queue.
  *
- * @return a new blocking queue if success; NULL otherwise
- * @except EINVAL capacity <= 0
- * @except ENOMEM failed to allocate memory
+ * @param capacity should be greater than 0.
+ * @return a pointer to a new blocking queue if success; NULL otherwise.
  */
 struct bq *bq_new(int capacity);
 
@@ -21,18 +20,19 @@ struct bq *bq_new(int capacity);
 int bq_capacity(const struct bq *queue);
 
 /**
- * Get the number of element in a blocking queue.
+ * Get the number of elements in a blocking queue.
  *
- * Though "queue" is not const,
- * this function never insert or remove new elements.
+ * @param queue is conceptually const.
  */
 int bq_size(struct bq *queue);
 
 /**
  * Insert a new element into tail of a blocking queue.
  *
- * If the queue is full (that is, its size is equal to its capacity),
+ * If a blocking queue is full (that is, its size is equal to its capacity),
  * bq_put() blocks a calling thread until bq_take() removes an element.
+ *
+ * A thread can be cancelled while it is blocked by bq_put().
  *
  * @return 1 if "element" is not NULL; 0 otherwise.
  */
@@ -48,8 +48,10 @@ _Bool bq_offer(struct bq *queue, void *element);
 /**
  * Get and remove an element from head of a blocking queue.
  *
- * If the queue is empty (that is, its size is equal to 0),
+ * If a blocking queue is empty (that is, its size is equal to 0),
  * bq_take() blocks a calling thread until bq_put() inserts a new element.
+ *
+ * A thread can be cancelled while it is blocked by bq_take().
  *
  * @return non-NULL pointer to a taken element.
  */
@@ -65,7 +67,10 @@ void *bq_poll(struct bq *queue);
 /**
  * Destroy a blocking queue.
  *
- * Destoryed queue never be reusable.
+ * A destoryed queue never be reusable.
+ *
+ * @param dtor destroys each element in a blocking queue.
+ *        If you want to do nothing for each, give it NULL.
  */
 void bq_destroy(struct bq *queue, void (*dtor)(void *));
 
