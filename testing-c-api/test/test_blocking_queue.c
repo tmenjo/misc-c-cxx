@@ -12,25 +12,11 @@
 #define C 19
 #define D 17
 
-#define assert_put_abc(queue) do {		\
-	int *p = NULL;				\
-	p = malloc(sizeof(int));		\
-	assert_not_nullptr(p);			\
-	*p = A;					\
-	ck_assert(bq_offer((queue), p));	\
-	p = malloc(sizeof(int));		\
-	assert_not_nullptr(p);			\
-	*p = B;					\
-	ck_assert(bq_offer((queue), p));	\
-	p = malloc(sizeof(int));		\
-	assert_not_nullptr(p);			\
-	*p = C;					\
-	ck_assert(bq_offer((queue), p));	\
-} while(0)
+/* testcase 1 */
 
 START_TEST(test_capacity)
 {
-	/* capacity should be positive */
+	/* capacity should be greater than 0 */
 	assert_nullptr(bq_new(0));
 	assert_nullptr(bq_new(-1));
 	assert_nullptr(bq_new(INT_MIN));
@@ -39,31 +25,6 @@ START_TEST(test_capacity)
 	assert_not_nullptr(queue);
 	ck_assert_int_eq(INT_MAX, bq_capacity(queue));
 	ck_assert_int_eq(0, bq_size(queue));
-	bq_destroy(queue, NULL);
-}
-END_TEST
-
-START_TEST(test_null_element)
-{
-	struct bq *const queue = bq_new(1);
-	assert_not_nullptr(queue);
-	ck_assert_int_eq(1, bq_capacity(queue));
-	ck_assert_int_eq(0, bq_size(queue));
-
-	/* NULL cannot be put */
-	ck_assert(!bq_put(queue, NULL));
-	ck_assert_int_eq(0, bq_size(queue));
-	ck_assert(!bq_offer(queue, NULL));
-	ck_assert_int_eq(0, bq_size(queue));
-
-	int a = A;
-	ck_assert(bq_put(queue, &a));
-	ck_assert_int_eq(1, bq_size(queue));
-
-	/* non-blocking return */
-	ck_assert(!bq_put(queue, NULL));
-	ck_assert_int_eq(1, bq_size(queue));
-
 	bq_destroy(queue, NULL);
 }
 END_TEST
@@ -96,6 +57,7 @@ START_TEST(test_fifo)
 	ck_assert_ptr_eq(&a, p);
 	ck_assert_int_eq(A, *p);
 	ck_assert_int_eq(2, bq_size(queue));
+	ck_assert_int_eq(3, bq_capacity(queue));
 
 	/* <= head [ B, C ] tail <= */
 
@@ -103,11 +65,13 @@ START_TEST(test_fifo)
 	ck_assert_ptr_eq(&b, p);
 	ck_assert_int_eq(B, *p);
 	ck_assert_int_eq(1, bq_size(queue));
+	ck_assert_int_eq(3, bq_capacity(queue));
 
 	/* <= head [ C ] tail <= */
 
 	ck_assert(bq_put(queue, &d));
 	ck_assert_int_eq(2, bq_size(queue));
+	ck_assert_int_eq(3, bq_capacity(queue));
 
 	/* <= head [ C, D ] tail <= */
 
@@ -115,6 +79,7 @@ START_TEST(test_fifo)
 	ck_assert_ptr_eq(&c, p);
 	ck_assert_int_eq(C, *p);
 	ck_assert_int_eq(1, bq_size(queue));
+	ck_assert_int_eq(3, bq_capacity(queue));
 
 	/* <= head [ D ] tail <= */
 
@@ -122,131 +87,11 @@ START_TEST(test_fifo)
 	ck_assert_ptr_eq(&d, p);
 	ck_assert_int_eq(D, *p);
 	ck_assert_int_eq(0, bq_size(queue));
+	ck_assert_int_eq(3, bq_capacity(queue));
 
 	/* <= head [] tail <= */
 
 	bq_destroy(queue, NULL);
-}
-END_TEST
-
-static void *run_take(void *arg);
-static void *run_put(void *arg);
-START_TEST(test_block)
-{
-	struct bq *queue = bq_new(3);
-	assert_not_nullptr(queue);
-	ck_assert_int_eq(0, bq_size(queue));
-
-	int *p = NULL;
-
-	void *ret = NULL;
-	pthread_t t;
-
-	/* a thread blocked by bq_take() can be cancelled */
-	assert_success(pthread_create(&t, NULL, run_take, queue));
-	assert_success(pthread_cancel(t));
-	assert_success(pthread_join(t, &ret));
-	ck_assert_ptr_eq(PTHREAD_CANCELED, ret);
-	ck_assert_int_eq(0, bq_size(queue));
-
-	/* bq_take() waits for bq_put() */
-	assert_success(pthread_create(&t, NULL, run_take, queue));
-
-	p = calloc(1, sizeof(int));
-	assert_not_nullptr(p);
-	ck_assert(bq_put(queue, p));
-
-	assert_success(pthread_join(t, &ret));
-	ck_assert_ptr_eq(p, ret);
-	ck_assert_int_eq(0, bq_size(queue));
-	free(p);
-
-	assert_put_abc(queue);
-	ck_assert_int_eq(3, bq_size(queue));
-
-	/* a thread blocked by bq_put() can be cancelled */
-	assert_success(pthread_create(&t, NULL, run_put, queue));
-	assert_success(pthread_cancel(t));
-	assert_success(pthread_join(t, &ret));
-	ck_assert_ptr_eq(PTHREAD_CANCELED, ret);
-
-	/* bq_put() waits for bq_take() */
-	assert_success(pthread_create(&t, NULL, run_put, queue));
-
-	p = bq_take(queue);
-	assert_not_nullptr(p);
-	ck_assert_int_eq(A, *p);
-	free(p);
-
-	assert_success(pthread_join(t, &ret));
-	ck_assert_ptr_eq(NULL, ret);
-	ck_assert_int_eq(3, bq_size(queue));
-
-	p = bq_take(queue);
-	assert_not_nullptr(p);
-	ck_assert_int_eq(B, *p);
-	free(p);
-
-	p = bq_take(queue);
-	assert_not_nullptr(p);
-	ck_assert_int_eq(C, *p);
-	free(p);
-
-	p = bq_take(queue);
-	assert_not_nullptr(p);
-	ck_assert_int_eq(42, *p);
-	free(p);
-
-	bq_destroy(queue, free);
-}
-END_TEST
-
-static void *run_take(void *arg)
-{
-	struct bq *const queue = (struct bq *)arg;
-	int *const p = bq_take(queue);
-	return p;
-}
-
-static void *run_put(void *arg)
-{
-	struct bq *const queue = (struct bq *)arg;
-	int *const p = malloc(sizeof(int));
-	*p = 42;
-	pthread_cleanup_push(free, p);
-	bq_put(queue, p);
-	pthread_cleanup_pop(0); /* just remove */
-	return NULL;
-}
-
-START_TEST(test_nonblock)
-{
-	struct bq *queue = bq_new(1);
-	assert_not_nullptr(queue);
-
-	assert_nullptr(bq_poll(queue));
-
-	int a = A, b = B;
-	ck_assert(bq_offer(queue, &a));
-	ck_assert(!bq_offer(queue, &b));
-
-	int *const p = bq_poll(queue);
-	ck_assert_ptr_eq(&a, p);
-	ck_assert_int_eq(A, *p);
-
-	bq_destroy(queue, NULL);
-}
-END_TEST
-
-START_TEST(test_dtor)
-{
-	struct bq *const queue = bq_new(3);
-	assert_not_nullptr(queue);
-
-	assert_put_abc(queue);
-	ck_assert_int_eq(3, bq_size(queue));
-
-	bq_destroy(queue, free);
 }
 END_TEST
 
@@ -276,7 +121,7 @@ END_TEST
 
 static void *run_producer(void *arg)
 {
-	struct bq *const queue = (struct bq *)arg;
+	struct bq *const queue = arg;
 
 	for (int i = 0; i < NR_LOOPS; ++i) {
 		int *const elem = malloc(sizeof(int));
@@ -289,7 +134,7 @@ static void *run_producer(void *arg)
 
 static void *run_consumer(void *arg)
 {
-	struct bq *const queue = (struct bq *)arg;
+	struct bq *const queue = arg;
 
 	_Bool *const ret = malloc(sizeof(_Bool));
 	if (!ret)
@@ -308,19 +153,200 @@ static void *run_consumer(void *arg)
 	return ret;
 }
 
+/* testcase 2 */
+
+static struct bq *queue_ = NULL;
+
+static void setup(void)
+{
+	queue_ = bq_new(3);
+	assert_not_nullptr(queue_);
+	ck_assert_int_eq(3, bq_capacity(queue_));
+	ck_assert_int_eq(0, bq_size(queue_));
+}
+
+static void teardown(void)
+{
+	bq_destroy(queue_, free);
+}
+
+#define assert_put_unsafe(queue, elem, size) do {	\
+	int *const p = malloc(sizeof(int));		\
+	assert_not_nullptr(p);				\
+	*p = (elem);					\
+	ck_assert(bq_put((queue), p));			\
+	ck_assert_int_eq((size), bq_size((queue)));	\
+} while(0)
+
+#define assert_take_unsafe(queue, elem, size) do {	\
+	int *const p = bq_take((queue));		\
+	assert_not_nullptr(p);				\
+	ck_assert_int_eq((elem), *p);			\
+	ck_assert_int_eq((size), bq_size((queue)));	\
+	free(p);					\
+} while(0)
+
+START_TEST(test_dtor)
+{
+	assert_put_unsafe(queue_, A, 1);
+	assert_put_unsafe(queue_, B, 2);
+	assert_put_unsafe(queue_, C, 3);
+}
+END_TEST
+
+START_TEST(test_null_element)
+{
+	int *const p = calloc(1, sizeof(int));
+	assert_not_nullptr(p);
+
+	/* NULL cannot be put */
+	ck_assert(!bq_put(queue_, NULL));
+	ck_assert_int_eq(0, bq_size(queue_));
+	ck_assert(!bq_offer(queue_, NULL));
+	ck_assert_int_eq(0, bq_size(queue_));
+
+	assert_put_unsafe(queue_, A, 1);
+	assert_put_unsafe(queue_, B, 2);
+	assert_put_unsafe(queue_, C, 3);
+
+	/* non-blocking return */
+	ck_assert(!bq_put(queue_, NULL));
+	ck_assert_int_eq(3, bq_size(queue_));
+	ck_assert(!bq_offer(queue_, NULL));
+	ck_assert_int_eq(3, bq_size(queue_));
+}
+END_TEST
+
+static void *run_take(void *arg);
+static void *run_put(void *arg);
+START_TEST(test_block)
+{
+	int *p = NULL;
+
+	void *ret = NULL;
+	pthread_t t;
+
+	/* a thread blocked by bq_take() can be canceled */
+	assert_success(pthread_create(&t, NULL, run_take, queue_));
+	assert_success(pthread_cancel(t));
+	assert_success(pthread_join(t, &ret));
+	ck_assert_ptr_eq(PTHREAD_CANCELED, ret);
+	ck_assert_int_eq(0, bq_size(queue_));
+
+	/* bq_take() is waiting for bq_put() */
+	assert_success(pthread_create(&t, NULL, run_take, queue_));
+
+	p = calloc(1, sizeof(int));
+	assert_not_nullptr(p);
+	ck_assert(bq_put(queue_, p));
+	assert_success(pthread_join(t, &ret));
+	ck_assert_ptr_eq(p, ret);
+	free(p);
+	ck_assert_int_eq(0, bq_size(queue_));
+
+	assert_put_unsafe(queue_, A, 1);
+	assert_put_unsafe(queue_, B, 2);
+	assert_put_unsafe(queue_, C, 3);
+
+	/* a thread blocked by bq_put() can be canceled */
+	assert_success(pthread_create(&t, NULL, run_put, queue_));
+	assert_success(pthread_cancel(t));
+	assert_success(pthread_join(t, &ret));
+	ck_assert_ptr_eq(PTHREAD_CANCELED, ret);
+	ck_assert_int_eq(3, bq_size(queue_));
+
+	/* bq_put() is waiting for bq_take() */
+	assert_success(pthread_create(&t, NULL, run_put, queue_));
+
+	p = bq_take(queue_);
+	assert_not_nullptr(p);
+	ck_assert_int_eq(A, *p);
+	free(p);
+	assert_success(pthread_join(t, &ret));
+	ck_assert_ptr_eq(NULL, ret);
+	ck_assert_int_eq(3, bq_size(queue_));
+
+	assert_take_unsafe(queue_, B, 2);
+	assert_take_unsafe(queue_, C, 1);
+	assert_take_unsafe(queue_, D, 0);
+}
+END_TEST
+
+static void *run_take(void *arg)
+{
+	struct bq *const queue = arg;
+	int *const p = bq_take(queue);
+	return p;
+}
+
+static void *run_put(void *arg)
+{
+	struct bq *const queue = arg;
+
+	int *const p = malloc(sizeof(int));
+	pthread_cleanup_push(free, p);
+
+	*p = D;
+	bq_put(queue, p);
+
+	pthread_cleanup_pop(0); /* just remove */
+	return NULL;
+}
+
+#define assert_offer_unsafe(queue, elem, size) do {	\
+	int *const p = malloc(sizeof(int));		\
+	assert_not_nullptr(p);				\
+	*p = (elem);					\
+	ck_assert(bq_offer((queue), p));		\
+	ck_assert_int_eq((size), bq_size((queue)));	\
+} while(0)
+
+#define assert_poll_unsafe(queue, elem, size) do {	\
+	int *const p = bq_poll((queue));		\
+	assert_not_nullptr(p);				\
+	ck_assert_int_eq((elem), *p);			\
+	ck_assert_int_eq((size), bq_size((queue)));	\
+	free(p);					\
+} while(0)
+
+START_TEST(test_nonblock)
+{
+	assert_nullptr(bq_poll(queue_));
+	ck_assert_int_eq(0, bq_size(queue_));
+
+	assert_offer_unsafe(queue_, A, 1);
+	assert_offer_unsafe(queue_, B, 2);
+	assert_offer_unsafe(queue_, C, 3);
+
+	int *const p = calloc(1, sizeof(int));
+	assert_not_nullptr(p);
+	ck_assert(!bq_offer(queue_, p));
+	ck_assert_int_eq(3, bq_size(queue_));
+	free(p);
+
+	assert_poll_unsafe(queue_, A, 2);
+	assert_poll_unsafe(queue_, B, 1);
+	assert_poll_unsafe(queue_, C, 0);
+}
+END_TEST
+
 int main()
 {
-	TCase *const tcase = tcase_create("all");
-	tcase_add_test(tcase, test_capacity);
-	tcase_add_test(tcase, test_null_element);
-	tcase_add_test(tcase, test_fifo);
-	tcase_add_test(tcase, test_block);
-	tcase_add_test(tcase, test_nonblock);
-	tcase_add_test(tcase, test_dtor);
-	tcase_add_test(tcase, test_multithread);
+	TCase *const tcase1 = tcase_create("testcase1");
+	tcase_add_test(tcase1, test_capacity);
+	tcase_add_test(tcase1, test_fifo);
+	tcase_add_test(tcase1, test_multithread);
+
+	TCase *const tcase2 = tcase_create("testcase2");
+	tcase_add_checked_fixture(tcase2, setup, teardown);
+	tcase_add_test(tcase2, test_dtor);
+	tcase_add_test(tcase2, test_null_element);
+	tcase_add_test(tcase2, test_block);
+	tcase_add_test(tcase2, test_nonblock);
 
 	Suite *const suite = suite_create("blocking_queue");
-	suite_add_tcase(suite, tcase);
+	suite_add_tcase(suite, tcase1);
+	suite_add_tcase(suite, tcase2);
 
 	SRunner *const srunner = srunner_create(suite);
 	srunner_run_all(srunner, CK_NORMAL);
