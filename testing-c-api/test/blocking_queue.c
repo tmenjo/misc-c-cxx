@@ -6,8 +6,17 @@
 
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
+#define pthread_cleanup_push_free(p) \
+	pthread_cleanup_push(free, (p))
+
 #define pthread_cleanup_push_mutex_unlock(m) \
 	pthread_cleanup_push((void *)pthread_mutex_unlock, (m))
+
+#define pthread_cleanup_pop_exec() \
+	pthread_cleanup_pop(1)
+
+#define pthread_cleanup_pop_noexec() \
+	pthread_cleanup_pop(0)
 
 /* prototype */
 struct bq_elem;
@@ -69,7 +78,11 @@ _Bool bq_put(struct bq *queue, void *raw)
 		return 0;
 
 	struct bq_elem *const wrap = malloc(sizeof(struct bq_elem));
+	if (unlikely(!wrap))
+		return 0;
+
 	wrap->elem_ = raw;
+	pthread_cleanup_push_free(wrap);
 
 	pthread_cleanup_push_mutex_unlock(&queue->mutex_);
 	pthread_mutex_lock(&queue->mutex_);
@@ -82,8 +95,9 @@ _Bool bq_put(struct bq *queue, void *raw)
 	pthread_cond_broadcast(&queue->cond_can_take_);
 
 	/* <<< critical section */
-	pthread_cleanup_pop(1); /* execute before remove */
+	pthread_cleanup_pop_exec(); /* pthread_mutex_unlock */
 
+	pthread_cleanup_pop_noexec(); /* free */
 	return 1;
 }
 
@@ -92,9 +106,13 @@ _Bool bq_offer(struct bq *queue, void *raw)
 	if (unlikely(!raw))
 		return 0;
 
-	_Bool ret = 0; /* assume failure */
 	struct bq_elem *const wrap = malloc(sizeof(struct bq_elem));
+	if (unlikely(!wrap))
+		return 0;
+
 	wrap->elem_ = raw;
+
+	_Bool ret = 0; /* assume failure */
 
 	if (pthread_mutex_trylock(&queue->mutex_) != 0)
 		goto out;
@@ -132,7 +150,7 @@ void *bq_take(struct bq *queue)
 	pthread_cond_broadcast(&queue->cond_can_put_);
 
 	/* <<< critical section */
-	pthread_cleanup_pop(1); /* execute before remove */
+	pthread_cleanup_pop_exec(); /* pthread_mutex_unlock */
 
 	void *const raw = wrap->elem_;
 	free(wrap);
