@@ -23,14 +23,15 @@ struct bq_elem;
 static void do_nothing(void *);
 static _Bool bq_empty_unsafe(const struct bq *);
 static _Bool bq_full_unsafe(const struct bq *);
-static _Bool bq_insert_unsafe(struct bq *, struct bq_elem *);
+static void bq_insert_unsafe(struct bq *, struct bq_elem *);
 static struct bq_elem *bq_remove_unsafe(struct bq *);
+
+STAILQ_HEAD(bq_head, bq_elem);
 
 struct bq_elem {
 	void *elem_;
 	STAILQ_ENTRY(bq_elem) next_;
 };
-STAILQ_HEAD(bq_head, bq_elem);
 
 struct bq {
 	int size_;
@@ -92,12 +93,13 @@ _Bool bq_put(struct bq *queue, void *raw)
 		pthread_cond_wait(&queue->cond_can_put_, &queue->mutex_);
 
 	bq_insert_unsafe(queue, wrap);
-	pthread_cond_broadcast(&queue->cond_can_take_);
+	pthread_cond_signal(&queue->cond_can_take_);
 
 	/* <<< critical section */
 	pthread_cleanup_pop_exec(); /* pthread_mutex_unlock */
 
 	pthread_cleanup_pop_noexec(); /* free */
+
 	return 1;
 }
 
@@ -112,22 +114,28 @@ _Bool bq_offer(struct bq *queue, void *raw)
 
 	wrap->elem_ = raw;
 
+	/*
+	 * "ret" should be defined here because
+	 * pthread_cleanup_{push,pop} make a code block
+	 */
 	_Bool ret = 0; /* assume failure */
 
-	if (pthread_mutex_trylock(&queue->mutex_) != 0)
-		goto out;
+	pthread_cleanup_push_mutex_unlock(&queue->mutex_);
+	pthread_mutex_lock(&queue->mutex_);
 	/* critical section >>> */
 
 	if (!bq_full_unsafe(queue)) {
-		ret = bq_insert_unsafe(queue, wrap); /* success */
-		pthread_cond_broadcast(&queue->cond_can_take_);
+		ret = 1; /* success */
+		bq_insert_unsafe(queue, wrap);
+		pthread_cond_signal(&queue->cond_can_take_);
 	}
 
 	/* <<< critical section */
-	pthread_mutex_unlock(&queue->mutex_);
-out:
+	pthread_cleanup_pop_exec(); /* pthread_mutex_unlock */
+
 	if (!ret)
 		free(wrap);
+
 	return ret;
 }
 
@@ -147,7 +155,7 @@ void *bq_take(struct bq *queue)
 		pthread_cond_wait(&queue->cond_can_take_, &queue->mutex_);
 
 	wrap = bq_remove_unsafe(queue);
-	pthread_cond_broadcast(&queue->cond_can_put_);
+	pthread_cond_signal(&queue->cond_can_put_);
 
 	/* <<< critical section */
 	pthread_cleanup_pop_exec(); /* pthread_mutex_unlock */
@@ -160,26 +168,30 @@ void *bq_take(struct bq *queue)
 
 void *bq_poll(struct bq *queue)
 {
-	void *raw = NULL; /* assume failure */
+	/*
+	 * "wrap" should be defined here because
+	 * pthread_cleanup_{push,pop} make a code block
+	 */
 	struct bq_elem *wrap = NULL; /* assume failure */
 
-	if (pthread_mutex_trylock(&queue->mutex_) != 0)
-		goto out;
+	pthread_cleanup_push_mutex_unlock(&queue->mutex_);
+	pthread_mutex_lock(&queue->mutex_);
 	/* critical section >>> */
 
 	if (!bq_empty_unsafe(queue)) {
 		wrap = bq_remove_unsafe(queue); /* success */
-		pthread_cond_broadcast(&queue->cond_can_put_);
+		pthread_cond_signal(&queue->cond_can_put_);
 	}
 
 	/* <<< critical section */
-	pthread_mutex_unlock(&queue->mutex_);
+	pthread_cleanup_pop_exec(); /* pthread_mutex_unlock */
 
-	if (wrap) {
-		raw = wrap->elem_;
-		free(wrap);
-	}
-out:
+	if (!wrap)
+		return NULL;
+
+	void *const raw = wrap->elem_;
+	free(wrap);
+
 	return raw;
 }
 
@@ -217,11 +229,10 @@ static inline _Bool bq_full_unsafe(const struct bq *queue)
 	return (queue->size_ >= queue->capacity_);
 }
 
-static inline _Bool bq_insert_unsafe(struct bq *queue, struct bq_elem *wrap)
+static inline void bq_insert_unsafe(struct bq *queue, struct bq_elem *wrap)
 {
 	STAILQ_INSERT_TAIL(&queue->head_, wrap, next_);
 	++queue->size_;
-	return 1;
 }
 
 static inline struct bq_elem *bq_remove_unsafe(struct bq *queue)

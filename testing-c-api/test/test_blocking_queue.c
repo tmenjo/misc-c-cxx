@@ -1,6 +1,8 @@
 #include <limits.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "blocking_queue.h"
 
@@ -96,7 +98,7 @@ START_TEST(test_fifo)
 END_TEST
 
 #define CAPACITY 10
-#define NR_LOOPS 10000
+#define NR_LOOPS 1000000
 static void *run_producer(void *);
 static void *run_consumer(void *);
 START_TEST(test_multithread)
@@ -106,8 +108,12 @@ START_TEST(test_multithread)
 
 	void *ret = NULL;
 	pthread_t p, c;
+
+	/* run consumer first */
 	assert_success(pthread_create(&c, NULL, run_consumer, queue));
 	assert_success(pthread_create(&p, NULL, run_producer, queue));
+
+	/* join producer first */
 	assert_success(pthread_join(p, NULL));
 	assert_success(pthread_join(c, &ret));
 
@@ -115,6 +121,7 @@ START_TEST(test_multithread)
 	ck_assert(*(_Bool *)ret);
 	free(ret);
 
+	ck_assert_int_eq(0, bq_size(queue));
 	bq_destroy(queue, free);
 }
 END_TEST
@@ -151,6 +158,72 @@ static void *run_consumer(void *arg)
 
 	pthread_cleanup_pop(0); /* just remove */
 	return ret;
+}
+
+#define NR_PRODUCERS 3
+#define NR_CONSUMERS 5
+static void *run_prod2(void *);
+static void *run_cons2(void *);
+START_TEST(test_multithread2)
+{
+	struct bq *const queue = bq_new(CAPACITY);
+	assert_not_nullptr(queue);
+
+	pthread_t p[NR_PRODUCERS], c[NR_CONSUMERS];
+
+	/* run consumer first */
+	for (size_t i = 0; i < NR_CONSUMERS; ++i)
+		assert_success(pthread_create(&c[i], NULL, run_cons2, queue));
+	for (size_t i = 0; i < NR_PRODUCERS; ++i)
+		assert_success(pthread_create(&p[i], NULL, run_prod2, queue));
+
+	sleep(1);
+
+	/* cancel producer first */
+	for (size_t i = 0; i < NR_PRODUCERS; ++i) {
+		void *ret = NULL;
+		assert_success(pthread_cancel(p[i]));
+		assert_success(pthread_join(p[i], &ret));
+		ck_assert_ptr_eq(PTHREAD_CANCELED, ret);
+	}
+	for (size_t i = 0; i < NR_CONSUMERS; ++i) {
+		void *ret = NULL;
+		assert_success(pthread_cancel(c[i]));
+		assert_success(pthread_join(c[i], &ret));
+		ck_assert_ptr_eq(PTHREAD_CANCELED, ret);
+	}
+
+	ck_assert_int_eq(0, bq_size(queue));
+	bq_destroy(queue, free);
+}
+END_TEST
+
+static void *run_prod2(void *arg)
+{
+	struct bq *const queue = arg;
+
+	for (;;) {
+		pthread_testcancel();
+
+		int *const p = malloc(sizeof(int));
+		pthread_cleanup_push(free, p);
+		bq_put(queue, p);
+		pthread_cleanup_pop(0); /* just remove */
+	}
+
+	return arg; /* should never be here */
+}
+
+static void *run_cons2(void *arg)
+{
+	struct bq *const queue = arg;
+
+	for (;;) {
+		int *const p = bq_take(queue);
+		free(p);
+	}
+
+	return arg; /* should never be here */
 }
 
 /* testcase 2 */
@@ -196,9 +269,6 @@ END_TEST
 
 START_TEST(test_null_element)
 {
-	int *const p = calloc(1, sizeof(int));
-	assert_not_nullptr(p);
-
 	/* NULL cannot be put */
 	ck_assert(!bq_put(queue_, NULL));
 	ck_assert_int_eq(0, bq_size(queue_));
@@ -263,7 +333,8 @@ START_TEST(test_block)
 	ck_assert_int_eq(A, *p);
 	free(p);
 	assert_success(pthread_join(t, &ret));
-	ck_assert_ptr_eq(NULL, ret);
+	assert_not_nullptr(ret);
+	ck_assert_int_eq(D, *(int *)ret);
 	ck_assert_int_eq(3, bq_size(queue_));
 
 	assert_take_unsafe(queue_, B, 2);
@@ -284,13 +355,16 @@ static void *run_put(void *arg)
 	struct bq *const queue = arg;
 
 	int *const p = malloc(sizeof(int));
+	if (!p)
+		return NULL;
 	pthread_cleanup_push(free, p);
 
 	*p = D;
 	bq_put(queue, p);
 
 	pthread_cleanup_pop(0); /* just remove */
-	return NULL;
+
+	return p;
 }
 
 #define assert_offer_unsafe(queue, elem, size) do {	\
@@ -336,6 +410,7 @@ int main()
 	tcase_add_test(tcase1, test_capacity);
 	tcase_add_test(tcase1, test_fifo);
 	tcase_add_test(tcase1, test_multithread);
+	tcase_add_test(tcase1, test_multithread2);
 
 	TCase *const tcase2 = tcase_create("testcase2");
 	tcase_add_checked_fixture(tcase2, setup, teardown);
