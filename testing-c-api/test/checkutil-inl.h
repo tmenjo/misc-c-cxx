@@ -34,11 +34,4 @@
 #define assert_not_nullptr(expr_) \
 	ck_assert_ptr_ne(NULL, (expr_))
 
-#define assert_success_or_error(err_, expr_) do {	\
-	if ((expr_) == C_OK)				\
-		break;					\
-	const int e_ = errno;				\
-	ck_assert_int_eq((err_), e_);			\
-} while (0)
-
 #endif /* CHECKUTIL_INL_H */

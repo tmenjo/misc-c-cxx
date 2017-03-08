@@ -6,6 +6,13 @@
 #include <check.h>
 #include "checkutil-inl.h"
 
+#define assert_success_or_error(err_, expr_) do {	\
+	if ((expr_) == C_OK)				\
+		break;					\
+	const int e_ = errno;				\
+	ck_assert_int_eq((err_), e_);			\
+} while (0)
+
 static char cwd_base_[PATH_MAX] = { 0 };
 
 static void setup_once(void)
