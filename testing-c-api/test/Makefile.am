@@ -25,6 +25,12 @@ TESTS = \
 
 check_PROGRAMS = $(TESTS)
 
+test_blocking_queue_CPPFLAGS = \
+	-DCAPACITY=10 \
+	-DNR_LOOPS=1000000 \
+	-DNR_PRODUCERS=3 \
+	-DNR_CONSUMERS=5
+
 test_blocking_queue_CFLAGS = -pthread
 test_concurrent_set_CFLAGS = -pthread
 test_pthread_CFLAGS = -pthread
