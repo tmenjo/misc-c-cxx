@@ -2,41 +2,46 @@
 
 #include <check.h>
 
-struct q_int_elem {
-	int elem;
-	STAILQ_ENTRY(q_int_elem) _;
+struct int_elem {
+	int elem_;
+	STAILQ_ENTRY(int_elem) next_;
 };
-STAILQ_HEAD(q_int, q_int_elem);
+STAILQ_HEAD(int_head, int_elem);
 
 START_TEST(test_fifo)
 {
-	struct q_int head;
+	struct int_head head;
 	STAILQ_INIT(&head);
 	ck_assert(STAILQ_EMPTY(&head));
+	ck_assert_ptr_eq(NULL, STAILQ_FIRST(&head));
 
-	const struct q_int_elem *i = STAILQ_FIRST(&head);
-	ck_assert_ptr_eq(NULL, i);
-
-	struct q_int_elem a, b, c;
-	a.elem = 3;
-	b.elem = 2;
-	c.elem = 5;
-	STAILQ_INSERT_TAIL(&head, &a, _);
-	STAILQ_INSERT_TAIL(&head, &b, _);
-	STAILQ_INSERT_TAIL(&head, &c, _);
-
+	struct int_elem a;
+	a.elem_ = 'A';
+	STAILQ_INSERT_TAIL(&head, &a, next_);
 	ck_assert(!STAILQ_EMPTY(&head));
 
-	i = STAILQ_FIRST(&head);
-	ck_assert_int_eq(3, i->elem);
-	i = STAILQ_NEXT(i, _);
-	ck_assert_int_eq(2, i->elem);
-	i = STAILQ_NEXT(i, _);
-	ck_assert_int_eq(5, i->elem);
-	ck_assert_ptr_eq(NULL, STAILQ_NEXT(i, _));
+	struct int_elem b, c;
+	b.elem_ = 'B';
+	c.elem_ = 'C';
+	STAILQ_INSERT_TAIL(&head, &b, next_);
+	STAILQ_INSERT_TAIL(&head, &c, next_);
 
-	STAILQ_REMOVE_HEAD(&head, _);
-	ck_assert_int_eq(2, STAILQ_FIRST(&head)->elem);
+	const struct int_elem *i = STAILQ_FIRST(&head);
+	ck_assert_int_eq('A', i->elem_);
+	i = STAILQ_NEXT(i, next_);
+	ck_assert_int_eq('B', i->elem_);
+	i = STAILQ_NEXT(i, next_);
+	ck_assert_int_eq('C', i->elem_);
+	i = STAILQ_NEXT(i, next_);
+	ck_assert_ptr_eq(NULL, i);
+
+	ck_assert_int_eq('A', STAILQ_FIRST(&head)->elem_);
+	STAILQ_REMOVE_HEAD(&head, next_);
+	ck_assert_int_eq('B', STAILQ_FIRST(&head)->elem_);
+	STAILQ_REMOVE_HEAD(&head, next_);
+	ck_assert_int_eq('C', STAILQ_FIRST(&head)->elem_);
+	STAILQ_REMOVE_HEAD(&head, next_);
+	ck_assert(STAILQ_EMPTY(&head));
 }
 END_TEST
 

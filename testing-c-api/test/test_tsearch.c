@@ -18,24 +18,15 @@ static int int_less(const void *lhs, const void *rhs)
 	return (a < b) ? -1 : ((a > b) ? 1 : 0);
 }
 
-START_TEST(test_int_less)
-{
-	static const int zero = 0, one = 1, minus_one = -1;
-	ck_assert(int_less(&zero, &zero) == 0);
-	ck_assert(int_less(&zero, &one) < 0);
-	ck_assert(int_less(&zero, &minus_one) > 0);
-}
-END_TEST
-
 START_TEST(test_tsearch)
 {
 	void *root = NULL;
 
-	const int a = 3;
+	const int a = 'A';
 	const int *const *const app = tsearch(&a, &root, int_less);
 	assert_not_nullptr(app);
 	ck_assert_ptr_eq(&a, *app);
-	ck_assert_int_eq(3, **app);
+	ck_assert_int_eq('A', **app);
 
 	tdestroy(root, do_nothing);
 }
@@ -45,18 +36,18 @@ START_TEST(test_tfind)
 {
 	void *root = NULL;
 
-	const int a = 3;
+	const int a = 'A';
 	assert_nullptr(tfind(&a, &root, int_less));
 	assert_not_nullptr(tsearch(&a, &root, int_less));
 
-	const int b = 2;
+	const int b = 'B';
 	assert_nullptr(tfind(&b, &root, int_less));
 
-	const int c = 3;
-	const int *const *const app = tfind(&c, &root, int_less);
+	const int k = 'A';
+	const int *const *const app = tfind(&k, &root, int_less);
 	assert_not_nullptr(app);
 	ck_assert_ptr_eq(&a, *app);
-	ck_assert_int_eq(3, **app);
+	ck_assert_int_eq('A', **app);
 
 	tdestroy(root, do_nothing);
 }
@@ -66,15 +57,15 @@ START_TEST(test_tdelete)
 {
 	void *root = NULL;
 
-	const int a = 3;
+	const int a = 'A';
 	assert_nullptr(tdelete(&a, &root, int_less));
 	assert_not_nullptr(tsearch(&a, &root, int_less));
 
-	const int b = 2;
+	const int b = 'B';
 	assert_nullptr(tdelete(&b, &root, int_less));
 
-	const int c = 3;
-	assert_not_nullptr(tdelete(&c, &root, int_less));
+	const int k = 'A';
+	assert_not_nullptr(tdelete(&k, &root, int_less));
 
 	tdestroy(root, do_nothing);
 }
@@ -86,17 +77,17 @@ START_TEST(test_tdestroy)
 
 	int *const a = malloc(sizeof(int));
 	assert_not_nullptr(a);
-	*a = 3;
+	*a = 'A';
 	assert_not_nullptr(tsearch(a, &root, int_less));
 
 	int *const b = malloc(sizeof(int));
 	assert_not_nullptr(b);
-	*b = 2;
+	*b = 'B';
 	assert_not_nullptr(tsearch(b, &root, int_less));
 
 	int *const c = malloc(sizeof(int));
 	assert_not_nullptr(c);
-	*c = 5;
+	*c = 'C';
 	assert_not_nullptr(tsearch(c, &root, int_less));
 
 	tdestroy(root, free);
@@ -107,17 +98,20 @@ START_TEST(test_dtor)
 {
 	void *root = NULL;
 
+	/* allocate A and add it into the tree */
 	int *const a = malloc(sizeof(int));
-	*a = 3;
+	*a = 'A';
 	assert_not_nullptr(tsearch(a, &root, int_less));
 
-	const int b = 3;
-	int **const app = tfind(&b, &root, int_less);
+	/* get a pointer to A; it is not removed yet */
+	const int k = 'A';
+	int **const app = tfind(&k, &root, int_less);
 	assert_not_nullptr(app);
 	int *const ap = *app;
 	ck_assert_ptr_eq(a, ap);
 
-	assert_not_nullptr(tdelete(&b, &root, int_less));
+	/* remove A from the tree then free it */
+	assert_not_nullptr(tdelete(&k, &root, int_less));
 	free(ap);
 
 	tdestroy(root, free);
@@ -127,7 +121,6 @@ END_TEST
 int main()
 {
 	TCase *const tcase = tcase_create("all");
-	tcase_add_test(tcase, test_int_less);
 	tcase_add_test(tcase, test_tsearch);
 	tcase_add_test(tcase, test_tfind);
 	tcase_add_test(tcase, test_tdelete);
