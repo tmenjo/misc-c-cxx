@@ -2,25 +2,22 @@
 #define CHECKUTIL_WAIT_INL_H
 
 #include <sys/wait.h>
-
 #include <check.h>
 
-/* constants */
 #define C_CHILD 0
 
-/* macros */
-#define assert_child_exited(code, cpid) do {			\
-	int status = -1;					\
-	ck_assert_int_eq(cpid, waitpid(cpid, &status, 0));	\
-	ck_assert(WIFEXITED(status));				\
-	ck_assert_int_eq(code, WEXITSTATUS(status));		\
+#define assert_child_exited(code_, pid_) do {			\
+	int st_ = -1;						\
+	ck_assert_int_eq((pid_), waitpid((pid_), &st_, 0));	\
+	ck_assert(WIFEXITED(st_));				\
+	ck_assert_int_eq((code_), WEXITSTATUS(st_));		\
 } while(0)
 
-#define assert_child_signaled(sig, cpid) do {			\
-	int status = -1;					\
-	ck_assert_int_eq(cpid, waitpid(cpid, &status, 0));	\
-	ck_assert(WIFSIGNALED(status));				\
-	ck_assert_int_eq(sig, WTERMSIG(status));		\
+#define assert_child_signaled(sig_, pid_) do {			\
+	int st_ = -1;						\
+	ck_assert_int_eq((pid_), waitpid((pid_), &st_, 0));	\
+	ck_assert(WIFSIGNALED(st_));				\
+	ck_assert_int_eq((sig_), WTERMSIG((st_)));		\
 } while(0)
 
 #endif /* CHECKUTIL_WAIT_INL_H */

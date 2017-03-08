@@ -3,37 +3,42 @@
 
 #include <errno.h>
 #include <inttypes.h>
-
 #include <check.h>
 
-/* constants */
 #define EOK 0
 #define C_OK 0
 #define C_ERR -1
 #define C_FALSE 0
 #define C_EQUAL 0
 
-/* macros */
-#define assert_success(ret) ck_assert_int_eq(C_OK, (ret))
-#define assert_not_failure(ret) ck_assert_int_ne(C_ERR, (ret))
-#define assert_nullptr(ret) ck_assert_ptr_eq(NULL, (ret))
-#define assert_not_nullptr(ret) ck_assert_ptr_ne(NULL, (ret))
-/* note that expr is lazy-evaluated */
-#define assert_success_or_error(err, expr)	\
-	do {					\
-		if ((expr) == 0)		\
-			break;			\
-		const int e = errno;		\
-		ck_assert_int_eq((err), e);	\
-	} while (0)
-#define assert_error(err, ret, expr)			\
-	do {						\
-		errno = EOK;				\
-		const intmax_t r = (intmax_t)(expr);	\
-		const int e = errno;			\
-		ck_assert_int_eq((ret), r);		\
-		ck_assert_int_eq((err), e);		\
-	} while (0)
-#define assert_failure(err, expr) assert_error((err), C_ERR, (expr))
+#define assert_success(expr_) \
+	ck_assert_int_eq(C_OK, (expr_))
+
+#define assert_not_failure(expr_) \
+	ck_assert_int_ne(C_ERR, (expr_))
+
+#define assert_error(err_, ret_, expr_) do {	\
+	errno = EOK;				\
+	const intmax_t r_ = (intmax_t)(expr_);	\
+	const int e_ = errno;			\
+	ck_assert_int_eq((ret_), r_);		\
+	ck_assert_int_eq((err_), e_);		\
+} while (0)
+
+#define assert_failure(err_, expr_) \
+	assert_error((err_), C_ERR, (expr_))
+
+#define assert_nullptr(expr_) \
+	ck_assert_ptr_eq(NULL, (expr_))
+
+#define assert_not_nullptr(expr_) \
+	ck_assert_ptr_ne(NULL, (expr_))
+
+#define assert_success_or_error(err_, expr_) do {	\
+	if ((expr_) == C_OK)				\
+		break;					\
+	const int e_ = errno;				\
+	ck_assert_int_eq((err_), e_);			\
+} while (0)
 
 #endif /* CHECKUTIL_INL_H */
